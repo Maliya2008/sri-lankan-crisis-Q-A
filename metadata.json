@@ -1,0 +1,6 @@
+{
+  "name": "Simple Polls",
+  "description": "An interactive polling site featuring colorful headings, custom voting responses, sleek minimalist navigation, and a secure admin panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
