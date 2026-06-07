@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to LankaCrisis Q&A Admin Panel...</title>
+    <script>
+      // Clean up path ending to find repo subfolder base if any, e.g. /sri-lankan-crisis-Q-A/admin -> /sri-lankan-crisis-Q-A
+      const pathWithSlash = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
+      const base = pathWithSlash.replace(/\/admin\/?$/, '');
+      const search = window.location.search || "";
+      window.location.replace((base || "/") + search + '#admin');
+    </script>
+  </head>
+  <body style="font-family: system-ui, -apple-system, sans-serif; background-color: #fafafa; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #475569;">
+    <div style="text-align: center; padding: 2rem;">
+      <div style="font-weight: 800; font-size: 1.125rem; color: #064e43; text-transform: uppercase; tracking-wider: 0.1em; margin-bottom: 0.5rem;">LankaCrisis Q&A</div>
+      <p style="font-size: 0.875rem; margin: 0 0 1rem 0;">Redirecting you safely to the Admin Panel...</p>
+      <div style="width: 1.5rem; height: 1.5rem; border: 2px solid #cbd5e1; border-top-color: #064e43; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto;"></div>
+    </div>
+    <style>
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </body>
+</html>
