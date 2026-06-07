@@ -1,6 +1,6 @@
 {
-  "name": "Simple Polls",
-  "description": "An interactive polling site featuring colorful headings, custom voting responses, sleek minimalist navigation, and a secure admin panel.",
+  "name": "Sri Lankan Crisis Q&A",
+  "description": "An interactive perspectives platform and Q&A engine tracking civic consensus, economic recovery solutions, and humanitarian support following the 2022 Sri Lankan crisis.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

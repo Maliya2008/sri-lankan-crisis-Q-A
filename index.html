@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SolidPolls — Interactive Perspective Platform</title>
+    <title>Sri Lankan Crisis Q&A — Civic Perspective Hub</title>
     
     <!-- Premium Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,14 +27,14 @@
       };
     </script>
     
-    <!-- Custom styling to prevent flash of unstyled icons / smooth animations -->
+    <!-- Custom styling to prevent flash of unstyled icons / smooth transitions -->
     <style>
       @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(8px); }
+        from { opacity: 0; transform: translateY(12px); }
         to { opacity: 1; transform: translateY(0); }
       }
       .animate-fade-in {
-        animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
       ::-webkit-scrollbar {
         width: 8px;
@@ -52,7 +52,7 @@
       }
     </style>
   </head>
-  <body class="min-h-screen bg-[#fafafa] flex flex-col font-sans text-slate-800 leading-normal antialiased selection:bg-indigo-100 selection:text-indigo-900">
+  <body class="min-h-screen bg-[#fafafa] flex flex-col font-sans text-slate-800 leading-normal antialiased selection:bg-teal-100 selection:text-teal-900">
     
     <!-- MAIN MOUNT CONTAINER -->
     <div id="app" class="flex flex-col min-h-screen"></div>
@@ -63,104 +63,151 @@
     <!-- Master Single-File JavaScript App -->
     <script>
       // KEY IDENTIFIERS
-      const STORAGE_POLLS_KEY = "simple_polls_data";
-      const STORAGE_SITE_CONFIG_KEY = "simple_polls_site_config";
-      const STORAGE_USER_VOTES_KEY = "simple_polls_user_votes";
+      const STORAGE_POLLS_KEY = "sl_crisis_polls_data";
+      const STORAGE_ADS_KEY = "sl_crisis_ads_data";
+      const STORAGE_SITE_CONFIG_KEY = "sl_crisis_site_config";
+      const STORAGE_USER_VOTES_KEY = "sl_crisis_user_votes";
 
       // PRESET COLOR OPTIONS FOR POLLS
       const COLOR_PRESETS = [
-        { id: "indigo", bg: "bg-slate-900 border-b-4 border-indigo-500", text: "text-slate-100", label: "Dark Indigo Accent" },
-        { id: "emerald", bg: "bg-[#064e3b] border-b-4 border-emerald-400", text: "text-emerald-50", label: "Forest Emerald" },
-        { id: "rose", bg: "bg-[#881337] border-b-4 border-rose-400", text: "text-rose-50", label: "Sunset Ruby" },
-        { id: "violet", bg: "bg-indigo-950 border-b-4 border-violet-400", text: "text-violet-50", label: "Solid Deep Violet" },
-        { id: "amber", bg: "bg-[#78350f] border-b-4 border-amber-400", text: "text-amber-50", label: "Honey Amber" },
-        { id: "coal", bg: "bg-zinc-900 border-b-4 border-slate-450", text: "text-zinc-100", label: "Midnight Carbon" }
+        { id: "emerald", bg: "bg-[#064e43] border-b-4 border-emerald-400", text: "text-emerald-50", label: "Ceylon Emerald" },
+        { id: "sapphire", bg: "bg-[#0f172a] border-b-4 border-sky-450", text: "text-slate-100", label: "Indian Ocean Sapphire" },
+        { id: "ruby", bg: "bg-[#7f1d1d] border-b-4 border-amber-300", text: "text-rose-50", label: "Lankan Amber Ruby" },
+        { id: "bark", bg: "bg-[#7c2d12] border-b-4 border-yellow-400", text: "text-orange-50", label: "Cinnamon Bark Spice" },
+        { id: "midnight", bg: "bg-zinc-900 border-b-4 border-teal-500", text: "text-zinc-100", label: "Midnight Coal" }
       ];
 
-      // DEFAULT BACKUPS
+      // DEFAULT SITE CONFIG (DYNAMICALLY CHANGEABLE IN ADMIN)
       const DEFAULT_SITE_CONFIG = {
-        brandName: "SolidPolls",
-        brandSub: "Interactive Engine",
-        homeTitle: "Human Perspectives",
-        homeSubtitle: "Cast your vote across our primary design, productivity, and lifestyle surveys to view immediate recommendations & custom breakdown stats.",
-        footerText: "A highly-polished modern aesthetic feedback engine. Crafted for simple digital decisions.",
-        primaryAccentColor: "bg-indigo-600",
-        accentTextColor: "text-indigo-600",
+        brandName: "LankaCrisis Q&A",
+        brandSub: "Civic Consensus Engine",
+        homeTitle: "Sri Lankan Economic Recovery & Policy Outlook",
+        homeSubtitle: "Vote across structured policy surveys, express civic perspectives, and examine key recovery insights on tourism, agriculture, and monetary stabilization. Your input shapes collaborative reform feedback.",
+        footerText: "A non-partisan civic platform for tracking consensus and recovery solutions. Created for transparent policy education.",
+        primaryAccentColor: "bg-[#064e43]",
+        accentTextColor: "text-[#064e43]",
         navItems: [
-          { id: "nav-polls", label: "Live Polls", path: "/", iconName: "Vote" },
-          { id: "nav-stats", label: "Collective Stats", path: "/stats", iconName: "BarChart3" },
-          { id: "nav-admin", label: "Admin Console", path: "/admin", iconName: "Shield", badgeText: "Control" }
+          { id: "nav-polls", label: "Live Q&A Surveys", path: "/", iconName: "Vote" },
+          { id: "nav-stats", label: "Collective Stats", path: "/stats", iconName: "BarChart3" }
         ]
       };
 
+      // INITIAL SURVIVING DATA - EMPOWERED BY TOPICS EXCLUSIVELY COVERING SRI LANKAN ECONOMIC REALITY
       const INITIAL_POLLS = [
         {
-          id: "poll-productivity",
-          question: "How do you organize your daily deep-work sessions?",
-          description: "Select the primary time management method that aligns with your professional focus style.",
-          category: "Workflow",
-          headingColor: "bg-slate-900 border-b-4 border-indigo-500",
-          textColor: "text-slate-100",
-          accentColor: "bg-indigo-600 hover:bg-indigo-700 text-white",
-          options: [
-            { id: "opt-prod-1", text: "The Pomodoro Loop (25m Focus / 5m Rest)", votes: 142, response: "Highly effective for maintaining high cognitive endurance across long developer sprints." },
-            { id: "opt-prod-2", text: "90-Minute High-Intensity Focus Intervals", votes: 98, response: "Allows deep-dives into complex algorithms without interrupting creative state flows." },
-            { id: "opt-prod-3", text: "Task-Driven Execution (No timer limits)", votes: 64, response: "Excellent for practitioners who prioritize output momentum over rigid time blocks." }
-          ]
-        },
-        {
-          id: "poll-design",
-          question: "What is your primary design system guideline priority?",
-          description: "Decide whether high architectural spacing, rigorous semantic color presets, or flexible layouts guide your frontend.",
-          category: "Aesthetics",
-          headingColor: "bg-[#064e3b] border-b-4 border-emerald-400",
+          id: "poll-recovery-causes",
+          question: "Primary catalyst of the 2022 macroeconomic balance-of-payments crisis?",
+          description: "Select the policy pivot you evaluate was most central in initiating foreign reserve exhaustions.",
+          category: "Macroeconomics",
+          headingColor: "bg-[#064e43] border-b-4 border-emerald-400",
           textColor: "text-emerald-50",
-          accentColor: "bg-emerald-600 hover:bg-emerald-700 text-white",
+          accentColor: "bg-[#064e43] hover:bg-[#043d34] text-white",
           options: [
-            { id: "opt-ds-1", text: "Tight Structural Layout (High Information Density)", votes: 110, response: "Perfect for dashboard consoles and technical applications requiring multi-metric tracking." },
-            { id: "opt-ds-2", text: "Generous Negative Space (Swiss/Modern Slate)", votes: 175, response: "Conveys an airy, premium feeling. Highly recommended for creative portfolios and landing pages." },
-            { id: "opt-ds-3", text: "Atomic Component Autonomy (No restrictive rules)", votes: 45, response: "Provides maximum developer freedom but risks styling drift as team size scales." }
+            { id: "opt-causes-1", text: "Organic Agriculture Reform (Sudden Fertilizer Ban)", votes: 642, response: "Key point. The rapid restriction of agricultural inputs triggered immediate crop yield reductions in tea & rice, boosting import dependence." },
+            { id: "opt-causes-2", text: "Aggressive Tax Cuts (Unhedged 2019 Fiscal Reductions)", votes: 890, response: "Critical consensus. The immediate slashing of VAT rates dried out public treasury revenue streams, forcing rating downgrades and debt defaults." },
+            { id: "opt-causes-3", text: "Loss of Tourism Inflows & Sovereign Debt Amortizations", votes: 412, response: "Accurate insight. Parallel tourism freezes during 2020 left Sri Lanka without crucial reserve buffers to service heavy sovereign maturities." }
           ]
         },
         {
-          id: "poll-lifestyle",
-          question: "How does your team capture meeting conclusions?",
-          description: "Select the communication framework that serves as your central repository.",
-          category: "Productivity",
-          headingColor: "bg-[#881337] border-b-4 border-rose-400",
-          textColor: "text-rose-50",
-          accentColor: "bg-rose-600 hover:bg-rose-700 text-white",
+          id: "poll-stabilization-priorities",
+          question: "Which sector holds the highest potential for clean foreign exchange inflows?",
+          description: "Analyze where capital injections and investment incentives should land to optimize domestic stabilization.",
+          category: "Stabilization",
+          headingColor: "bg-[#0f172a] border-b-4 border-sky-450",
+          textColor: "text-slate-100",
+          accentColor: "bg-slate-900 hover:bg-slate-850 text-white",
           options: [
-            { id: "opt-ls-1", text: "AI-Powered Meeting Recorders & Summarizers", votes: 231, response: "Ensures complete alignment, freeing practitioners to engage fully in active discussion." },
-            { id: "opt-ls-2", text: "Collaborative Real-time Shared Notebooks", votes: 120, response: "Encourages collective participation and immediate alignment on direct action points." },
-            { id: "opt-ls-3", text: "Minimalist Bullet Logs (Strict human summaries)", votes: 89, response: "Avoids administrative noise and retains high focus on core executive items." }
+            { id: "opt-sect-1", text: "Global IT Services, Software Exports & Freelancer Channels", votes: 310, response: "Excellent priority. Leveraging the highly-skilled local software engineering workforce creates steady service inflows requiring no bulk resource imports." },
+            { id: "opt-sect-2", text: "Eco-Adventure Tourism & Sustainable Port Logistics Complexes", votes: 485, response: "Strong historical factor. Re-invigorating niche tourism corridors drives high retail revenue and supports small entrepreneurs." },
+            { id: "opt-sect-3", text: "Value-Added Ceylon Tea, Spices & High-Strength Textiles", votes: 245, response: "Traditional asset. Reforming manufacturing logistics to foster higher yield exports expands long-term agricultural sustainability." }
+          ]
+        },
+        {
+          id: "poll-social-reforms",
+          question: "What is the most pressing social safeguard reform for rural populations?",
+          description: "Prioritize state safety nets required to shield families during structural economic alignments.",
+          category: "Social Safety",
+          headingColor: "bg-[#7c2d12] border-b-4 border-yellow-400",
+          textColor: "text-orange-50",
+          accentColor: "bg-amber-850 hover:bg-amber-900 text-white",
+          options: [
+            { id: "opt-saf-1", text: "Expanding Direct, Audited Welfare Transfers (Samurdhi/Aswesuma Reforms)", votes: 512, response: "Vital strategy. Deploying transparent targeting algorithms ensures support meets truly vulnerable families without local corruption." },
+            { id: "opt-saf-2", text: "Subsidized Domestic Farming Inputs & Solar Power Integration", votes: 388, response: "Practical focus. Safeguarding organic-synthetic fertilizer mixes and local micro-grids shields producers from imported power fluctuations." },
+            { id: "opt-saf-3", text: "School Food Programs & Basic Medical Supply Security", votes: 476, response: "Direct target. Guaranteeing free diagnostic access and child nutrition preserves human capital throughout macro adjustments." }
           ]
         }
       ];
 
-      // CORE APP STATE
+      // INITIAL DECORATIVE ADS TO MATCH THE TOURISM & AID THEMATIC FOCUS FOR SRI LANKA
+      const INITIAL_ADS = [
+        {
+          id: "ad-lanka-tourism",
+          title: "Visit Sri Lanka: Travel to Support Local Communities",
+          description: "Explore gold sand coasts, deep wildlife sanctuaries, and ancient highland temples. Your visit directly employs local guides, independent hoteliers, and creative craftspeople working towards economic revitalization.",
+          imageUrl: "https://images.unsplash.com/photo-1546708973-b339540b5162?w=600&auto=format&fit=crop&q=80",
+          linkUrl: "https://www.srilanka.travel",
+          badgeText: "Revitalization Initiative",
+          position: "Top Banner", // "Top Banner" or "In-Feed"
+          buttonText: "Plan Your Eco-Trip",
+          isActive: true
+        },
+        {
+          id: "ad-red-cross-aid",
+          title: "Support Sri Lanka Child Nutrition Campaigns",
+          description: "Provide medical kits, dry food rations, and school notebooks to children in remote rural dry-zones. Help local response teams secure child welfare and health safety nets in critical provinces.",
+          imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&auto=format&fit=crop&q=80",
+          linkUrl: "https://www.unicef.org/srilanka",
+          badgeText: "Emergency Relief Appeal",
+          position: "In-Feed",
+          buttonText: "Sponsor Nutrition Packs",
+          isActive: true
+        }
+      ];
+
+      // CORE APPLICATION STATE
       let polls = [];
+      let ads = [];
       let siteConfig = {};
       let userVotes = {};
-      let currentRoute = window.location.pathname;
+      let currentRoute = "/"; // "/" represents Polls list, "/stats" represents Stats view, "/admin" is Admin console
 
-      // ADMIN EDIT STATE
-      let activeAdminTab = "polls"; // "polls" or "site"
+      // ADMIN PORTAL & SECURITY VARIABLES
+      let isAdminAuthenticated = sessionStorage.getItem("admin_logged_in") === "true";
+      let adminLoginEmail = "";
+      let adminLoginPassword = "";
+      let adminLoginErrorMsg = "";
+
+      // ACTIVE ADMIN UI SUB-TAB
+      let activeAdminTab = "polls"; // "polls", "ads", "site"
+
+      // FORM TEMPORARY STATE: POLL EDITOR
       let isEditingPoll = false;
       let editingPollId = null;
       let pollFormQuestion = "";
-      let pollFormCategory = "Directives";
+      let pollFormCategory = "Macroeconomics";
       let pollFormDescription = "";
-      let pollFormSelectedColorIdx = 0; // index inside COLOR_PRESETS or -1 for custom theme
+      let pollFormSelectedColorIdx = 0; // index in COLOR_PRESETS, -1 for custom
       let pollFormCustomBg = "";
       let pollFormCustomText = "";
       let pollFormOptions = [
-        { text: "Option A", response: "Excellent choice! You possess the traits of a builder.", votes: 0 },
-        { text: "Option B", response: "Intriguing angle. You see opportunities in every challenge.", votes: 0 },
-        { text: "Option C", response: "Pragmatic decision. Reliability is your finest quality.", votes: 0 }
+        { text: "Option A", response: "Excellent analysis on stabilization guidelines.", votes: 0 },
+        { text: "Option B", response: "Very sensible approach to public accountability.", votes: 0 },
+        { text: "Option C", response: "Plausible reform pathway. Reliability remains paramount.", votes: 0 }
       ];
 
-      // SITE SETTINGS FORM STATES
+      // FORM TEMPORARY STATE: AD EDITOR
+      let isEditingAd = false;
+      let editingAdId = null;
+      let adFormTitle = "";
+      let adFormDescription = "";
+      let adFormImageUrl = "";
+      let adFormLinkUrl = "";
+      let adFormBadgeText = "Sponsored Announcement";
+      let adFormPosition = "In-Feed"; // "Top Banner", "In-Feed"
+      let adFormButtonText = "Learn More";
+      let adFormIsActive = true;
+
+      // FORM TEMPORARY STATE: SITE DESIGN
       let siteFormBrandName = "";
       let siteFormBrandSub = "";
       let siteFormHomeTitle = "";
@@ -170,18 +217,48 @@
       let siteFormFooterText = "";
       let siteFormNavItems = [];
 
-      // HELPER: Convert pascal/camel cases to lowercase hyphenated strings for Lucide Icon parser
-      function formatLucideIcon(name) {
-        if (!name) return "help-circle";
-        return name
-          .replace(/([a-z0-0])([A-Z])/g, '$1-$2')
-          .replace(/\s+/g, '-')
-          .toLowerCase();
+      // DYNAMIC GITHUB PAGES & STANDARD ROUTE RESOLUTION
+      function determineCurrentRoute() {
+        const path = window.location.pathname.toLowerCase();
+        const hash = window.location.hash.toLowerCase();
+        const search = window.location.search.toLowerCase();
+
+        // Check for admin page matches
+        if (path.endsWith('/admin') || hash === '#admin' || hash === '#/admin' || search.includes('page=admin')) {
+          return "/admin";
+        }
+        // Check for stats page matches
+        if (path.endsWith('/stats') || hash === '#stats' || hash === '#/stats' || search.includes('page=stats')) {
+          return "/stats";
+        }
+        // Fallback to home/surveys page
+        return "/";
       }
 
-      // STATE LOADING ENGINE
+      // NAV ROUTER
+      function routeTo(path) {
+        // To be 100% compatible with GitHub Pages without throwing 404, we support hash-like indicators
+        if (path === '/') {
+          window.location.hash = "";
+          currentRoute = "/";
+        } else if (path === '/stats') {
+          window.location.hash = "stats";
+          currentRoute = "/stats";
+        } else if (path === '/admin') {
+          window.location.hash = "admin";
+          currentRoute = "/admin";
+        } else {
+          window.location.hash = path.replace('/', '');
+          currentRoute = path;
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        renderApp();
+      }
+
+      // STATE LOAD ENGINE
       function initAppState() {
         try {
+          // Polls list synchronization
           const storedPolls = localStorage.getItem(STORAGE_POLLS_KEY);
           if (storedPolls) {
             polls = JSON.parse(storedPolls);
@@ -190,6 +267,16 @@
             localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(INITIAL_POLLS));
           }
 
+          // Ads list synchronization
+          const storedAds = localStorage.getItem(STORAGE_ADS_KEY);
+          if (storedAds) {
+            ads = JSON.parse(storedAds);
+          } else {
+            ads = INITIAL_ADS;
+            localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(INITIAL_ADS));
+          }
+
+          // Site config synchronization
           const storedConfig = localStorage.getItem(STORAGE_SITE_CONFIG_KEY);
           if (storedConfig) {
             siteConfig = JSON.parse(storedConfig);
@@ -198,36 +285,72 @@
             localStorage.setItem(STORAGE_SITE_CONFIG_KEY, JSON.stringify(DEFAULT_SITE_CONFIG));
           }
 
+          // Stored votes matching tracker
           const storedVotes = localStorage.getItem(STORAGE_USER_VOTES_KEY);
-          if (storedVotes) {
-            userVotes = JSON.parse(storedVotes);
-          } else {
-            userVotes = {};
-          }
+          userVotes = storedVotes ? JSON.parse(storedVotes) : {};
 
-          // Back synchronizations to admin forms
+          // Sync variables to corresponding form fields
           syncAdminFormFields();
+          
+          // Detect route from original window coordinates
+          currentRoute = determineCurrentRoute();
         } catch (e) {
-          console.error("State initialization failed, resetting safely", e);
+          console.error("State crash on system parameters, soft resetting safely...", e);
           polls = INITIAL_POLLS;
+          ads = INITIAL_ADS;
           siteConfig = DEFAULT_SITE_CONFIG;
           userVotes = {};
           syncAdminFormFields();
+          currentRoute = "/";
         }
       }
 
       function syncAdminFormFields() {
-        siteFormBrandName = siteConfig.brandName || "SolidPolls";
-        siteFormBrandSub = siteConfig.brandSub || "Interactive Engine";
-        siteFormHomeTitle = siteConfig.homeTitle || "Human Perspectives";
-        siteFormHomeSubtitle = siteConfig.homeSubtitle || "Cast your vote.";
-        siteFormPrimaryAccent = siteConfig.primaryAccentColor || "bg-indigo-600";
-        siteFormAccentText = siteConfig.accentTextColor || "text-indigo-600";
-        siteFormFooterText = siteConfig.footerText || "A highly-polished feedback app.";
+        // Site Identity mapping
+        siteFormBrandName = siteConfig.brandName || "LankaCrisis Q&A";
+        siteFormBrandSub = siteConfig.brandSub || "Perspective Platform";
+        siteFormHomeTitle = siteConfig.homeTitle || "Sri Lankan Economic Recovery";
+        siteFormHomeSubtitle = siteConfig.homeSubtitle || "Perspective survey platform.";
+        siteFormPrimaryAccent = siteConfig.primaryAccentColor || "bg-[#064e43]";
+        siteFormAccentText = siteConfig.accentTextColor || "text-[#064e43]";
+        siteFormFooterText = siteConfig.footerText || "A transparent platform for civic perspectives.";
         siteFormNavItems = JSON.parse(JSON.stringify(siteConfig.navItems || []));
+
+        // Poll Creation temporary buffers Reset
+        pollFormQuestion = "";
+        pollFormCategory = "Macroeconomics";
+        pollFormDescription = "";
+        pollFormSelectedColorIdx = 0;
+        pollFormCustomBg = "";
+        pollFormCustomText = "";
+        pollFormOptions = [
+          { text: "Option A", response: "Excellent recovery prioritization analysis.", votes: 0 },
+          { text: "Option B", response: "Sensible approach regarding domestic fiscal reforms.", votes: 0 },
+          { text: "Option C", response: "Pragmatic consensus. Rebuilding institutions remains key.", votes: 0 }
+        ];
+
+        // Ad Creation temporary buffers Reset
+        adFormTitle = "";
+        adFormDescription = "";
+        adFormImageUrl = "";
+        adFormLinkUrl = "";
+        adFormBadgeText = "Sponsored Campaign";
+        adFormPosition = "In-Feed";
+        adFormButtonText = "Learn More";
+        adFormIsActive = true;
       }
 
-      // VOTE ENGINE TRIGGERS
+      // ROUTING COMPATIBILITY CHECKS
+      window.addEventListener("popstate", () => {
+        currentRoute = determineCurrentRoute();
+        renderApp();
+      });
+      window.addEventListener("hashchange", () => {
+        currentRoute = determineCurrentRoute();
+        renderApp();
+      });
+
+      // CORE USER VOTE EMISSION ACTIONS
       function castVote(pollId, optionId) {
         polls = polls.map(p => {
           if (p.id === pollId) {
@@ -275,43 +398,40 @@
         renderApp();
       }
 
-      // NAVIGATION EVENTS
-      function routeTo(path) {
-        window.history.pushState(null, "", path);
-        currentRoute = path;
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        renderApp();
+      // HELPER: Convert Name to clean lucide icon keyword format
+      function parseIconString(name) {
+        if (!name) return "help-circle";
+        return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/\s+/g, '-').toLowerCase();
       }
 
-      // POPSTATE BROWSING BIND
-      window.addEventListener("popstate", () => {
-        currentRoute = window.location.pathname;
-        renderApp();
-      });
-
-      // CORE RENDERING ROUTE SWITCH
+      // MAIN RENDER ENGINE
       function renderApp() {
         const appContainer = document.getElementById("app");
         if (!appContainer) return;
 
-        // Header Component
-        let navItemsData = siteConfig.navItems || [];
-        let pollsCount = polls.length;
+        // Determine if we are rendered inside the admin route
+        const showingAdminView = currentRoute === "/admin";
 
-        let navHTML = `
-          <nav id="app-navbar" class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
+        // Filter valid site config nav items.
+        // We explicitly omit the admin link from the public frontend navigation
+        const publicNavItems = (siteConfig.navItems || []).filter(item => item.path !== "/admin");
+
+        // RENDER HEADER MODULE
+        let headerHTML = `
+          <nav id="app-navigation" class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div class="flex items-center justify-between h-16">
-                <!-- Branding logo block -->
-                <div onclick="routeTo('/')" class="flex items-center gap-2.5 cursor-pointer group">
-                  <div class="w-9 h-9 rounded-xl ${siteConfig.primaryAccentColor || 'bg-slate-900'} flex items-center justify-center text-white transition-all duration-300 shadow-sm">
-                    <i data-lucide="vote" class="w-5 h-5"></i>
+                
+                <!-- Brand logo area -->
+                <div onclick="routeTo('/')" class="flex items-center gap-3 cursor-pointer group">
+                  <div class="w-10 h-10 rounded-xl ${siteConfig.primaryAccentColor || 'bg-teal-900'} flex items-center justify-center text-white transition-transform group-hover:scale-105 duration-250 shadow-sm">
+                    <i data-lucide="vote" class="w-5.5 h-5.5"></i>
                   </div>
                   <div>
-                    <span class="font-sans font-bold tracking-tight text-slate-900 block text-base md:text-lg">
+                    <span class="font-sans font-extrabold text-slate-900 block text-base md:text-lg tracking-tight leading-tight">
                       ${siteConfig.brandName}
                     </span>
-                    <span class="font-mono text-[10px] text-slate-400 block -mt-1 font-semibold uppercase tracking-wider">
+                    <span class="font-mono text-[9px] text-slate-400 block font-bold uppercase tracking-wider">
                       ${siteConfig.brandSub}
                     </span>
                   </div>
@@ -319,61 +439,73 @@
 
                 <!-- Desktop links -->
                 <div class="hidden md:flex items-center gap-1.5">
-                  ${navItemsData.map(item => {
+                  ${publicNavItems.map(item => {
                     const isActive = currentRoute === item.path;
-                    const cleanIcon = formatLucideIcon(item.iconName);
+                    const resolvedIcon = parseIconString(item.iconName);
                     return `
                       <button 
                         onclick="routeTo('${item.path}')"
-                        class="relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                           isActive 
-                            ? `${siteConfig.accentTextColor} bg-slate-50 font-bold` 
-                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                            ? `${siteConfig.accentTextColor || 'text-teal-800'} bg-teal-50/70 font-bold` 
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                         }"
                       >
-                        <i data-lucide="${cleanIcon}" class="w-4 h-4 ${isActive ? siteConfig.accentTextColor : 'text-slate-400'}"></i>
+                        <i data-lucide="${resolvedIcon}" class="w-4 h-4"></i>
                         <span>${item.label}</span>
                         ${item.badgeText ? `
-                          <span class="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">
+                          <span class="inline-flex items-center px-1.5 py-0.2 rounded-full text-[8px] font-extrabold bg-teal-600 text-white uppercase tracking-wider">
                             ${item.badgeText}
                           </span>
                         ` : ''}
                       </button>
                     `;
                   }).join("")}
+
+                  ${isAdminAuthenticated ? `
+                    <div class="h-4 w-px bg-slate-200 mx-2"></div>
+                    <button 
+                      onclick="routeTo('/admin')"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-250/50"
+                    >
+                      <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                      <span>Console Active</span>
+                    </button>
+                  ` : ''}
                 </div>
 
-                <!-- Mobile burger menu toggler -->
+                <!-- Handheld burger icon toggler -->
                 <div class="md:hidden">
-                  <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
-                    <i data-lucide="menu" class="w-5 h-5" id="mobile-menu-burger-icon"></i>
+                  <button onclick="toggleHandheldMenu()" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors" id="burger-button">
+                    <i data-lucide="menu" class="w-5.5 h-5.5" id="burger-toggle-icon"></i>
                   </button>
                 </div>
+
               </div>
             </div>
 
-            <!-- Dynamic Mobile menu rails -->
-            <div id="mobile-dropdown-menu" class="hidden md:hidden border-t border-slate-100 bg-white/95">
-              <div class="px-3 py-4 space-y-1.5">
-                ${navItemsData.map(item => {
+            <!-- Handheld Mobile Drawer block -->
+            <div id="mobile-menu-drawer" class="hidden md:hidden border-t border-slate-100 bg-white">
+              <div class="px-4 py-4 space-y-2">
+                ${publicNavItems.map(item => {
                   const isActive = currentRoute === item.path;
-                  const cleanIcon = formatLucideIcon(item.iconName);
+                  const resolvedIcon = parseIconString(item.iconName);
                   return `
                     <button 
-                      onclick="toggleMobileMenu(); routeTo('${item.path}')"
-                      class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left text-sm font-medium transition-colors ${
+                      onclick="toggleHandheldMenu(); routeTo('${item.path}')"
+                      class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left text-xs font-bold transition-all ${
                         isActive 
                           ? 'bg-slate-900 text-white' 
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          : 'text-slate-600 hover:bg-slate-50'
                       }"
                     >
                       <div class="flex items-center gap-3">
-                        <i data-lucide="${cleanIcon}" class="w-4.5 h-4.5 ${isActive ? 'text-white' : 'text-slate-400'}"></i>
+                        <i data-lucide="${resolvedIcon}" class="w-4.5 h-4.5"></i>
                         <span>${item.label}</span>
                       </div>
                       ${item.badgeText ? `
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${
-                          isActive ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-600'
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-700'
                         }">
                           ${item.badgeText}
                         </span>
@@ -381,150 +513,221 @@
                     </button>
                   `;
                 }).join("")}
+
+                ${isAdminAuthenticated ? `
+                  <button 
+                    onclick="toggleHandheldMenu(); routeTo('/admin')"
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200"
+                  >
+                    <i data-lucide="shield" class="w-4.5 h-4.5"></i>
+                    <span>Authorized Console</span>
+                  </button>
+                ` : ''}
               </div>
             </div>
           </nav>
         `;
 
-        // Interactive Page Banner/Section Header
-        let activeNavLabel = "";
-        if (currentRoute === "/") activeNavLabel = "Live Polls";
-        else if (currentRoute === "/stats") activeNavLabel = "Collective Stats";
-        else if (currentRoute === "/admin") activeNavLabel = "Admin Console";
-        else {
-          const item = siteConfig.navItems?.find(n => n.path === currentRoute);
-          activeNavLabel = item ? item.label : "Active Custom Workspace";
-        }
+        // ADVERTISING INTEGRATION: TOP POSITION BANNER ADS
+        // Check for active "Top Banner" ads to inject seamlessly right below navbar
+        const activeTopAd = ads.find(a => a.isActive && a.position === "Top Banner");
+        let topAdBannerHTML = "";
+        if (activeTopAd && !showingAdminView) {
+          topAdBannerHTML = `
+            <div id="top-promotion-banner" class="bg-gradient-to-r from-slate-900 via-teal-980 to-slate-900 text-slate-100 border-b border-teal-800 relative select-none shrink-0">
+              <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4.5 flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in">
+                
+                <!-- Ad Left visual & details info -->
+                <div class="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                  ${activeTopAd.imageUrl ? `
+                    <img 
+                      src="${activeTopAd.imageUrl}" 
+                      alt="Banner promotion image" 
+                      class="w-16 h-12 rounded-lg object-cover border border-white/10 shrink-0 shadow-sm"
+                      referrerpolicy="no-referrer"
+                    />
+                  ` : `
+                    <div class="w-16 h-12 bg-white/10 rounded-lg flex items-center justify-center shrink-0 border border-white/5">
+                      <i data-lucide="sparkles" class="w-5 h-5 text-amber-300"></i>
+                    </div>
+                  `}
+                  <div class="min-w-0">
+                    <span class="inline-flex px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-widest bg-emerald-500 text-white leading-none align-middle mr-2">
+                      ${activeTopAd.badgeText || "PATRON CONTENT"}
+                    </span>
+                    <h5 class="inline font-sans font-bold text-sm text-white">
+                      ${activeTopAd.title}
+                    </h5>
+                    <p class="font-sans text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                      ${activeTopAd.description}
+                    </p>
+                  </div>
+                </div>
 
-        let mainHeading = "";
-        let subHeading = "";
-        if (currentRoute === "/") {
-          mainHeading = siteConfig.homeTitle;
-          subHeading = siteConfig.homeSubtitle;
-        } else if (currentRoute === "/stats") {
-          mainHeading = "Data Visualizations";
-          subHeading = "Aggregated comparative analytics derived from real interactive telemetry registered during active browser sessions.";
-        } else if (currentRoute === "/admin") {
-          mainHeading = "Directory Control";
-          subHeading = "Configure active polling campaigns, manage existing selections, change branding styles, and broadcast customized options instantly.";
-        } else {
-          mainHeading = activeNavLabel;
-          subHeading = "Welcome to your dynamically customizable workspace folder. Use the Admin Panel to modify this view layout.";
-        }
+                <!-- Ad CTA button -->
+                <div class="flex items-center gap-3 shrink-0">
+                  <a 
+                    href="${activeTopAd.linkUrl}" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-xs font-bold text-white rounded-lg transition-transform hover:scale-[1.02] shadow-sm flex items-center gap-1.5"
+                  >
+                    <span>${activeTopAd.buttonText || "Explore Link"}</span>
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                  </a>
+                  <button 
+                    onclick="dismissTopAdBanner()" 
+                    class="p-1 text-slate-400 hover:text-white rounded-md transition-colors"
+                    title="Dismiss alert"
+                  >
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                  </button>
+                </div>
 
-        let metaHeaderHTML = `
-          <div id="page-metadata-header" class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4 animate-fade-in animate-duration-300">
-            <div>
-              <div class="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 font-mono">
-                <span>${siteConfig.brandName} Workspace</span>
-                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-350"></i>
-                <span class="${siteConfig.accentTextColor} font-semibold">${activeNavLabel}</span>
               </div>
-              
-              <h1 class="font-sans font-extrabold text-slate-900 text-3xl md:text-4xl tracking-tight leading-none mt-1">
+            </div>
+          `;
+        }
+
+        // RENDER ACTIVE VIEW HEADER METADATA
+        let activeNavLabel = "Live Q&A Surveys";
+        if (currentRoute === "/stats") activeNavLabel = "Collective Stats";
+        else if (currentRoute === "/admin") activeNavLabel = "Directory Control Core";
+
+        let mainHeading = siteConfig.homeTitle;
+        let subHeading = siteConfig.homeSubtitle;
+        if (currentRoute === "/stats") {
+          mainHeading = "Consensus Data & Analytics";
+          subHeading = "Examine aggregated comparative insights from organic surveys and civic perspectives registered dynamically. Fully interactive sample sizes.";
+        } else if (currentRoute === "/admin") {
+          mainHeading = "Institutional Administration Engine";
+          subHeading = "Configure live campaigns, moderate options, change brand assets, and inject tailored ad placements instantly. Changes reflect client-side immediately.";
+        }
+
+        let metadataHeaderHTML = `
+          <div id="page-indicator-header" class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in">
+            <div class="space-y-2">
+              <div class="flex items-center gap-1 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">
+                <span>{{ PLATFORM HUB }}</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300"></i>
+                <span class="${siteConfig.accentTextColor || 'text-teal-700'} font-semibold">${activeNavLabel}</span>
+              </div>
+              <h1 class="font-sans font-extrabold text-slate-900 text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-none">
                 ${mainHeading}
               </h1>
-              
-              <p class="font-sans text-sm text-slate-500 mt-2 max-w-2xl leading-relaxed">
+              <p class="font-sans text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
                 ${subHeading}
               </p>
             </div>
 
-            <!-- Total active counters widget block -->
-            ${currentRoute !== "/admin" ? `
-              <div class="bg-white border border-slate-100 p-4.5 rounded-2xl shadow-sm flex items-center gap-4.5 shrink-0 max-w-sm">
-                <div class="w-10 h-10 rounded-xl ${siteConfig.primaryAccentColor || 'bg-slate-900'} text-white flex items-center justify-center shrink-0">
-                  <i data-lucide="vote" class="w-5 h-5"></i>
-                </div>
-                <div class="text-xs">
-                  <div class="font-mono font-bold text-slate-500 uppercase tracking-wider">Active Campaigns</div>
-                  <div class="font-sans font-bold text-slate-900 text-base mt-0.5">${pollsCount} Live Polls</div>
+            <!-- Dynamic live poll counter metrics card -->
+            ${!showingAdminView ? `
+              <div class="bg-white border border-slate-150 p-4 rounded-xl shadow-sm flex items-center justify-between gap-4 shrink-0 max-w-sm self-start md:self-auto">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl ${siteConfig.primaryAccentColor || 'bg-teal-900'} text-white flex items-center justify-center shrink-0">
+                    <i data-lucide="vote" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <span class="block font-mono text-[9px] text-slate-400 font-extrabold uppercase leading-none tracking-widest">Active Channels</span>
+                    <span class="block font-sans font-extrabold text-slate-800 text-sm mt-1">${polls.length} Live Forums</span>
+                  </div>
                 </div>
               </div>
             ` : ""}
           </div>
         `;
 
-        // Switch to compile appropriate view body HTML
-        let viewBodyHTML = "";
+        // CHOOSE ACTIVE CONTENT LAYOUT PANEL RENDERER
+        let mainViewBodyHTML = "";
         if (currentRoute === "/admin") {
-          viewBodyHTML = renderAdminPanel();
+          mainViewBodyHTML = renderAdminRoute();
         } else if (currentRoute === "/stats") {
-          viewBodyHTML = renderStatsDashboard();
+          mainViewBodyHTML = renderStatsRoute();
         } else {
-          viewBodyHTML = renderPollsList();
+          mainViewBodyHTML = renderPollsFeed();
         }
 
-        // Complete Frame Output Build
+        // COMPILE COMPREHENSIVE VIEWPORT FRAMES
         appContainer.innerHTML = `
-          ${navHTML}
+          ${headerHTML}
+          ${topAdBannerHTML}
           
-          <main id="app-main-content" class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            ${metaHeaderHTML}
-            <div id="route-panel-mount">
-              ${viewBodyHTML}
+          <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            ${metadataHeaderHTML}
+            <div id="rendered-content-mount" class="min-h-[400px]">
+              ${mainViewBodyHTML}
             </div>
           </main>
 
-          <!-- Footer static component -->
-          <footer id="app-footer" class="bg-white border-t border-slate-100 mt-16 py-10">
+          <!-- Footer static parameters -->
+          <footer class="bg-white border-t border-slate-100 py-10 mt-20">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                
                 <div class="text-center md:text-left">
-                  <span class="font-sans font-extrabold tracking-tight text-slate-900 text-sm">
+                  <h6 class="font-sans font-extrabold text-slate-900 text-sm">
                     ${siteConfig.brandName}
-                  </span>
-                  <p class="font-sans text-xs text-slate-400 mt-1 max-w-md">
+                  </h6>
+                  <p class="font-sans text-xs text-slate-400 mt-1 max-w-md mx-auto md:mx-0 leading-relaxed">
                     ${siteConfig.footerText}
                   </p>
                 </div>
                 
                 <div class="flex items-center gap-5">
-                  ${navItemsData.map(navItem => `
+                  ${publicNavItems.map(item => `
                     <button 
-                      onclick="routeTo('${navItem.path}')"
+                      onclick="routeTo('${item.path}')"
                       class="font-sans text-xs transition-colors ${
-                        currentRoute === navItem.path 
-                          ? `${siteConfig.accentTextColor || 'text-slate-800'} font-bold`
-                          : "text-slate-500 hover:text-slate-800 font-semibold"
+                        currentRoute === item.path 
+                          ? `${siteConfig.accentTextColor || 'text-teal-800'} font-bold`
+                          : "text-slate-500 hover:text-slate-800 font-medium"
                       }"
                     >
-                      ${navItem.label}
+                      ${item.label}
                     </button>
                   `).join("")}
                 </div>
+
               </div>
-              
+
               <div class="border-t border-slate-50 mt-8 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
-                <span class="font-mono text-[10px] text-slate-400 font-semibold tracking-wider">
-                  CLIENT STATE STORAGE • DYNAMIC SYNC
+                <span class="font-mono text-[9px] text-slate-400 font-extrabold tracking-wider">
+                  DURABLE CLIENT SIDE SYNCHRONIZER
                 </span>
                 <span class="font-sans text-[11px] text-slate-400">
-                  © ${new Date().getFullYear()} ${siteConfig.brandName}. All rights reserved.
+                  © ${new Date().getFullYear()} ${siteConfig.brandName}. All rights reserved. Registered under authentic sovereign educational fair-use.
                 </span>
               </div>
             </div>
           </footer>
         `;
 
-        // Trigger Lucide to render newly drawn elements instantly
+        // Initialize lucide vector paths instantly
         lucide.createIcons();
       }
 
-      // NAV MOBILE TOGGLE ENGINE
-      function toggleMobileMenu() {
-        const menu = document.getElementById("mobile-dropdown-menu");
-        const icon = document.getElementById("mobile-menu-burger-icon");
-        if (!menu) return;
-        
-        if (menu.classList.contains("hidden")) {
-          menu.classList.remove("hidden");
+      // DISMISS TOP AD ACTION
+      function dismissTopAdBanner() {
+        const bannerElement = document.getElementById("top-promotion-banner");
+        if (bannerElement) {
+          bannerElement.remove();
+        }
+      }
+
+      // NAV HANDHELD EXPANDER
+      function toggleHandheldMenu() {
+        const drawer = document.getElementById("mobile-menu-drawer");
+        const icon = document.getElementById("burger-toggle-icon");
+        if (!drawer) return;
+
+        if (drawer.classList.contains("hidden")) {
+          drawer.classList.remove("hidden");
           if (icon) {
             icon.setAttribute("data-lucide", "x");
             lucide.createIcons();
           }
         } else {
-          menu.classList.add("hidden");
+          drawer.classList.add("hidden");
           if (icon) {
             icon.setAttribute("data-lucide", "menu");
             lucide.createIcons();
@@ -532,247 +735,303 @@
         }
       }
 
+
       /* =========================================================================
-         VIEW: LIVE POLLS FEED
+         VIEWPORT: PRIMARY SURVEY FEED (LIVE PERSPECTIVES LIST)
          ========================================================================= */
-      function renderPollsList() {
+      function renderPollsFeed() {
         if (polls.length === 0) {
           return `
-            <div class="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm max-w-xl mx-auto my-10 px-6">
-              <div class="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="help-circle" class="w-8 h-8"></i>
+            <div class="text-center py-20 bg-white rounded-2xl border border-slate-150 shadow-sm max-w-lg mx-auto p-8 animate-fade-in">
+              <div class="w-14 h-14 bg-slate-50 text-slate-450 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                <i data-lucide="help-circle" class="w-7 h-7"></i>
               </div>
-              <h3 class="font-sans font-bold text-slate-800 text-lg">No Live Campaigns Published</h3>
-              <p class="font-sans text-slate-500 text-sm mt-1.5 max-w-sm mx-auto">
-                Use the top-right Admin Console navigation links to author active polling campaigns.
+              <h3 class="font-sans font-bold text-slate-850 text-base">No Open Consultations Published Yet</h3>
+              <p class="font-sans text-slate-500 text-xs mt-1.5 max-w-sm mx-auto leading-relaxed">
+                Check back shortly, or navigate to administrative paths to initialize Sri Lankan policy Q&A parameters.
               </p>
-              <button onclick="routeTo('/admin')" class="mt-5 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-sans text-xs font-bold hover:bg-slate-800 transition-colors">
-                Open Admin Console
-              </button>
             </div>
           `;
         }
 
-        return `
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-            ${polls.map(poll => {
-              const previousVoteId = userVotes[poll.id];
-              const totalVotes = poll.options.reduce((sum, o) => sum + o.votes, 0);
+        // We can intersperse enabled In-Feed Ads inside the polls listing
+        const activeInFeedAds = ads.filter(a => a.isActive && a.position === "In-Feed");
+        let adIndexTracker = 0;
 
-              let bodyContentHTML = "";
+        let listHTML = "";
 
-              if (previousVoteId) {
-                // USER HAS VOTED STATE - SHOW COMPARATIVE PROGRESS BARS AND CUSTOM FEEDBACK
-                let votedOption = poll.options.find(o => o.id === previousVoteId);
-                
-                bodyContentHTML = `
-                  <div class="space-y-4">
-                    <!-- Option bars block -->
-                    <div class="space-y-3.5">
-                      ${poll.options.map(opt => {
-                        const isThisVoted = opt.id === previousVoteId;
-                        const percentage = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
-                        
-                        return `
-                          <div class="space-y-1">
-                            <div class="flex justify-between items-center text-xs">
-                              <span class="font-sans font-bold ${isThisVoted ? 'text-slate-900' : 'text-slate-600'} flex items-center gap-1.5 truncate pr-2">
-                                ${isThisVoted ? '<span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>' : ''}
-                                ${opt.text}
-                              </span>
-                              <span class="font-mono font-extrabold text-slate-500 shrink-0">
-                                ${opt.votes} votes (${percentage}%)
-                              </span>
-                            </div>
-                            <!-- Bar graphics wrapper -->
-                            <div class="w-full h-3 bg-slate-100 rounded-lg overflow-hidden relative border border-slate-200/20">
-                              <div class="h-full rounded-r-lg transition-all duration-1000 ${isThisVoted ? 'bg-indigo-600' : 'bg-slate-300'}" style="width: ${percentage}%"></div>
-                            </div>
-                          </div>
-                        `;
-                      }).join("")}
-                    </div>
+        // Iterate through surveys and render cards, interspersing ads
+        polls.forEach((poll, idx) => {
+          const voterSelectedId = userVotes[poll.id];
+          const cumulativeVotes = poll.options.reduce((acc, opt) => acc + opt.votes, 0);
 
-                    <!-- Individual custom user developer feedback return block -->
-                    ${votedOption ? `
-                      <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-100/80 mt-4 text-xs animate-fade-in relative overflow-hidden">
-                        <div class="absolute left-0 top-0 bottom-0 w-1 ${siteConfig.primaryAccentColor || 'bg-slate-900'}"></div>
-                        <div class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-wider mb-1 flex items-center gap-1">
-                          <i data-lucide="terminal" class="w-3.5 h-3.5 text-slate-400"></i>
-                          Interactive Developer Feed Response
+          let voteBoxContent = "";
+
+          if (voterSelectedId) {
+            // USER HAS ALREADY CHOSEN AN OPTION. DISPLAY COMPARATIVE DATA PROGRESS AND THE INSIGHT FEEDBACK
+            const optedItem = poll.options.find(o => o.id === voterSelectedId);
+
+            voteBoxContent = `
+              <div class="space-y-4">
+                <div class="space-y-3">
+                  ${poll.options.map(opt => {
+                    const matchedUserChoice = opt.id === voterSelectedId;
+                    const percent = cumulativeVotes > 0 ? Math.round((opt.votes / cumulativeVotes) * 100) : 0;
+                    
+                    return `
+                      <div class="space-y-1 bg-white">
+                        <div class="flex justify-between items-center text-xs">
+                          <span class="font-sans font-bold ${matchedUserChoice ? 'text-slate-900' : 'text-slate-650'} flex items-center gap-1.5 truncate pr-2">
+                            ${matchedUserChoice ? '<span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span>' : ''}
+                            ${opt.text}
+                          </span>
+                          <span class="font-mono text-[11px] font-extrabold text-slate-500 shrink-0">
+                            ${opt.votes} votes (${percent}%)
+                          </span>
                         </div>
-                        <p class="font-sans text-slate-600 font-medium leading-relaxed">
-                          "${votedOption.response}"
-                        </p>
+                        <div class="w-full h-3 bg-slate-100 rounded-lg overflow-hidden relative border border-slate-105-0">
+                          <div class="h-full rounded-r-sm transition-all duration-1000 ${matchedUserChoice ? (siteConfig.primaryAccentColor || 'bg-teal-700') : 'bg-slate-305 bg-slate-300'}" style="width: ${percent}%"></div>
+                        </div>
                       </div>
-                    ` : ""}
+                    `;
+                  }).join("")}
+                </div>
 
-                    <!-- Undo capabilities trigger -->
-                    <div class="pt-3 border-t border-slate-100 flex justify-end">
-                      <button 
-                        onclick="retractVote('${poll.id}')"
-                        class="p-2 text-[11px] font-sans font-bold text-slate-400 hover:text-rose-600 rounded-lg transition-colors inline-flex items-center gap-1.5"
-                      >
-                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                        Change Chosen Vote
-                      </button>
+                <!-- Custom Thematic Insight Message from Analysts -->
+                ${optedItem ? `
+                  <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 mt-4 text-xs animate-fade-in relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 ${siteConfig.primaryAccentColor || 'bg-teal-950'}"></div>
+                    <div class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                      <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i>
+                      Lankan Analyst Response Insight
                     </div>
-                  </div>
-                `;
-              } else {
-                // UNVOTED SELECTION CARDS - SHOW OPTIONS TO SELECT
-                bodyContentHTML = `
-                  <div class="space-y-2.5">
-                    ${poll.options.map(opt => `
-                      <button 
-                        onclick="castVote('${poll.id}', '${opt.id}')"
-                        class="w-full text-left p-3.5 bg-white border border-slate-150 rounded-2xl hover:border-slate-800 hover:shadow-sm hover:bg-slate-50/50 transition-all text-xs font-semibold text-slate-700 flex justify-between items-center group relative overflow-hidden"
-                      >
-                        <span class="truncate pr-3">${opt.text}</span>
-                        <span class="w-5 h-5 rounded-lg bg-slate-50 border border-slate-150 text-slate-400/80 flex items-center justify-center shrink-0 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-colors">
-                          <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                        </span>
-                      </button>
-                    `).join("")}
-                  </div>
-                `;
-              }
-
-              return `
-                <div id="card-camp-${poll.id}" class="bg-white rounded-3xl overflow-hidden border border-slate-150/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <!-- Header solid colors configuration -->
-                  <div class="p-6 sm:p-7 ${poll.headingColor || 'bg-slate-900'} text-white relative">
-                    <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-widest bg-white/20 text-white leading-none mb-3">
-                      ${poll.category}
-                    </span>
-                    <h3 class="font-sans font-extrabold text-base md:text-lg leading-tight tracking-tight ${poll.textColor}">
-                      ${poll.question}
-                    </h3>
-                    <p class="font-sans text-[11px] leading-relaxed opacity-90 mt-1.5 ${poll.textColor}">
-                      ${poll.description}
+                    <p class="font-sans text-slate-650 font-medium leading-relaxed">
+                      "${optedItem.response}"
                     </p>
                   </div>
+                ` : ""}
 
-                  <!-- Choices Mount Panel -->
-                  <div class="p-6 sm:p-7 bg-white flex-grow flex flex-col justify-between">
-                    ${bodyContentHTML}
-                  </div>
+                <!-- Undo Choice actions -->
+                <div class="pt-3 border-t border-slate-100 flex justify-end">
+                  <button 
+                    onclick="retractVote('${poll.id}')"
+                    class="p-2 text-[10px] font-sans font-bold uppercase tracking-wider text-slate-400 hover:text-rose-600 rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    Change Decision Vote
+                  </button>
                 </div>
-              `;
-            }).join("")}
+              </div>
+            `;
+          } else {
+            // UNVOTED VIEW: RENDER CLEAN SELECTION ACTION TARGETS (TOUCH TARGET 44PX SECURED)
+            voteBoxContent = `
+              <div class="space-y-2.5">
+                ${poll.options.map(opt => `
+                  <button 
+                    onclick="castVote('${poll.id}', '${opt.id}')"
+                    class="w-full text-left p-4 bg-white border border-slate-150 rounded-xl hover:border-slate-800 hover:bg-slate-50/50 transition-all text-xs font-semibold text-slate-700 flex justify-between items-center group relative overflow-hidden"
+                    style="min-height: 44px;"
+                  >
+                    <span class="truncate pr-3">${opt.text}</span>
+                    <span class="w-5.5 h-5.5 rounded-lg bg-slate-50 border border-slate-150 text-slate-400 flex items-center justify-center shrink-0 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-colors">
+                      <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </span>
+                  </button>
+                `).join("")}
+              </div>
+            `;
+          }
+
+          listHTML += `
+            <div id="card-camp-${poll.id}" class="bg-white rounded-3xl overflow-hidden border border-slate-150 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow animate-fade-in">
+              <!-- Lankan theme header representation block -->
+              <div class="p-6 sm:p-8 ${poll.headingColor || 'bg-slate-900'} text-white relative flex-shrink-0">
+                <span class="inline-flex px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-white/20 text-white min-h-[16px] leading-none mb-3">
+                  ${poll.category}
+                </span>
+                <h3 class="font-sans font-bold text-base sm:text-lg leading-tight tracking-tight ${poll.textColor || 'text-white'}">
+                  ${poll.question}
+                </h3>
+                <p class="font-sans text-[11px] leading-relaxed opacity-90 mt-1.5 ${poll.textColor || 'text-white'}">
+                  ${poll.description}
+                </p>
+              </div>
+
+              <!-- Mount interactive logic panel -->
+              <div class="p-6 sm:p-8 bg-white flex-grow flex flex-col justify-between">
+                ${voteBoxContent}
+              </div>
+            </div>
+          `;
+
+          // Interspace an active In-Feed Ad after every 1st or 2nd main card
+          if ((idx === 0 || idx == 2) && activeInFeedAds[adIndexTracker]) {
+            const currentAd = activeInFeedAds[adIndexTracker];
+            listHTML += `
+              <div class="bg-white rounded-3xl overflow-hidden border-2 border-dashed border-teal-150 p-6 sm:p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative animate-fade-in min-h-[380px]">
+                
+                <div>
+                  <div class="flex items-center justify-between gap-2 mb-4">
+                    <span class="inline-flex px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-amber-500 text-white min-h-[16px] leading-none">
+                      ${currentAd.badgeText || "COMMUNITY SPONSOR"}
+                    </span>
+                    <span class="text-[9px] font-mono text-slate-400 font-extrabold uppercase">Patron Alert</span>
+                  </div>
+
+                  ${currentAd.imageUrl ? `
+                    <div class="w-full h-36 rounded-2xl overflow-hidden mb-4 bg-slate-100 border border-slate-150">
+                      <img 
+                        src="${currentAd.imageUrl}" 
+                        alt="Ad promotion graphics" 
+                        class="w-full h-full object-cover"
+                        referrerpolicy="no-referrer"
+                      />
+                    </div>
+                  ` : ""}
+
+                  <h4 class="font-sans font-extrabold text-[#064e43] text-sm sm:text-base leading-tight">
+                    ${currentAd.title}
+                  </h4>
+                  <p class="font-sans text-xs text-slate-500 mt-2 leading-relaxed">
+                    ${currentAd.description}
+                  </p>
+                </div>
+
+                <div class="pt-5 mt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span class="text-[10px] font-mono font-bold text-slate-400">SUPPORT OUTREACH</span>
+                  <a 
+                    href="${currentAd.linkUrl}" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="px-4 py-2 bg-[#064e43] hover:bg-[#033a31] text-xs font-bold text-white rounded-xl transition-all inline-flex items-center gap-1.5"
+                  >
+                    <span>${currentAd.buttonText || "Contribute Care"}</span>
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                  </a>
+                </div>
+
+              </div>
+            `;
+            adIndexTracker++;
+          }
+        });
+
+        return `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 animate-fade-in">
+            ${listHTML}
           </div>
         `;
       }
 
 
       /* =========================================================================
-         VIEW: COLLECTIVE STATISTICS
+         VIEWPORT: COLLECTIVE STATS (COMPARATIVE DEMOCRACY CHARTS)
          ========================================================================= */
-      function renderStatsDashboard() {
+      function renderStatsRoute() {
         if (polls.length === 0) {
           return `
-            <div class="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm max-w-xl mx-auto my-10 px-6">
-              <i data-lucide="bar-chart-3" class="w-10 h-10 text-slate-350 mx-auto mb-3"></i>
-              <h3 class="font-sans font-bold text-slate-800 text-lg">No Stats Records Registered</h3>
+            <div class="text-center py-20 bg-white rounded-2xl border border-slate-150 shadow-sm max-w-lg mx-auto p-8 animate-fade-in">
+              <i data-lucide="bar-chart-3" class="w-12 h-12 text-slate-350 mx-auto mb-3"></i>
+              <h3 class="font-sans font-bold text-slate-800 text-base">No Data Visualizations Available</h3>
             </div>
           `;
         }
 
-        // Aggregate stats
-        let totalCamps = polls.length;
-        let totalVotesGlobal = 0;
-        let categoriesSet = new Set();
-        let topOptionName = "None Registered";
-        let topOptionVotes = 0;
+        // Aggregate statistics telemetry
+        let grandVotesSum = 0;
+        let differentClusterCount = new Set();
+        let currentLeadingCandidate = "None Registered";
+        let leadingConsentCount = 0;
 
         polls.forEach(p => {
-          categoriesSet.add(p.category);
+          differentClusterCount.add(p.category);
           p.options.forEach(o => {
-            totalVotesGlobal += o.votes;
-            if (o.votes > topOptionVotes) {
-              topOptionVotes = o.votes;
-              topOptionName = `"${o.text}" (${p.category})`;
+            grandVotesSum += o.votes;
+            if (o.votes > leadingConsentCount) {
+              leadingConsentCount = o.votes;
+              currentLeadingCandidate = `"${o.text}" — ${p.category}`;
             }
           });
         });
 
         return `
-          <div class="space-y-8 animate-fade-in">
-            <!-- Aggregated Metrics Cards Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div class="space-y-10 animate-fade-in">
+            <!-- Numerical aggregation layout banner grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               
               <div class="bg-white rounded-2xl p-5 border border-slate-150 shadow-sm flex items-center gap-4">
-                <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                  <i data-lucide="bar-chart-3" class="w-5.5 h-5.5"></i>
+                <div class="w-12 h-12 rounded-xl bg-teal-50 text-[#064e43] flex items-center justify-center shrink-0 border border-teal-100">
+                  <i data-lucide="gauge" class="w-6 h-6"></i>
                 </div>
                 <div>
-                  <div class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-widest">Global Telemetry</div>
-                  <div class="font-sans font-black text-slate-900 text-xl leading-none mt-1">${totalVotesGlobal}</div>
-                  <div class="font-sans text-[11px] text-slate-400 mt-0.5">Total Votes Registered</div>
+                  <span class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block leading-none">Aggregate Votes</span>
+                  <span class="font-sans font-black text-slate-900 text-xl block mt-1 leading-none">${grandVotesSum} Samples</span>
+                  <span class="font-sans text-[10px] text-slate-450 mt-1 block">Authentic state surveys</span>
                 </div>
               </div>
 
               <div class="bg-white rounded-2xl p-5 border border-slate-150 shadow-sm flex items-center gap-4">
-                <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <i data-lucide="check" class="w-5.5 h-5.5"></i>
+                <div class="w-12 h-12 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0 border border-sky-100">
+                  <i data-lucide="layers" class="w-6 h-6"></i>
                 </div>
                 <div>
-                  <div class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-widest">Active Channels</div>
-                  <div class="font-sans font-black text-slate-900 text-xl leading-none mt-1">${totalCamps}</div>
-                  <div class="font-sans text-[11px] text-slate-400 mt-0.5">Custom Live Polls</div>
+                  <span class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block leading-none">Thematic Channels</span>
+                  <span class="font-sans font-black text-slate-900 text-xl block mt-1 leading-none">${polls.length} Active</span>
+                  <span class="font-sans text-[10px] text-slate-450 mt-1 block">Focus recovery topics</span>
                 </div>
               </div>
 
               <div class="bg-white rounded-2xl p-5 border border-slate-150 shadow-sm flex items-center gap-4">
-                <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                  <i data-lucide="layers" class="w-5.5 h-5.5"></i>
+                <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center shrink-0 border border-rose-100">
+                  <i data-lucide="tag" class="w-6 h-6"></i>
                 </div>
                 <div>
-                  <div class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-widest">Unique Clusters</div>
-                  <div class="font-sans font-black text-slate-900 text-xl leading-none mt-1">${categoriesSet.size}</div>
-                  <div class="font-sans text-[11px] text-slate-400 mt-0.5">Categories Customised</div>
+                  <span class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block leading-none">Categories Focused</span>
+                  <span class="font-sans font-black text-slate-900 text-xl block mt-1 leading-none">${differentClusterCount.size} Domains</span>
+                  <span class="font-sans text-[10px] text-slate-450 mt-1 block">Multi-disciplinary audits</span>
                 </div>
               </div>
 
-              <div class="bg-white rounded-2xl p-5 border border-slate-150 shadow-sm flex items-center gap-4 col-span-1 sm:col-span-2 lg:col-span-1">
-                <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                  <i data-lucide="sparkles" class="w-5.5 h-5.5"></i>
+              <div class="bg-white rounded-2xl p-5 border border-slate-150 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-100">
+                  <i data-lucide="sparkles" class="w-6 h-6"></i>
                 </div>
                 <div class="min-w-0">
-                  <div class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-widest">Top Voted Choice</div>
-                  <div class="font-sans font-black text-slate-900 text-sm mt-1 truncate max-w-full">${topOptionName}</div>
-                  <div class="font-sans text-[11px] text-slate-450 mt-0.5 shrink-0">${topOptionVotes} leading votes</div>
+                  <span class="font-mono text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block leading-none">Primary Consensus</span>
+                  <span class="font-sans font-black text-slate-900 text-xs block mt-1 truncate max-w-full">${currentLeadingCandidate}</span>
+                  <span class="font-sans text-[10px] text-slate-450 mt-1 block shrink-0">${leadingConsentCount} lead votes</span>
                 </div>
               </div>
 
             </div>
 
-            <!-- Detailed Breakdowns Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Highly styled comparative analytics cards layout with Micro-Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
               ${polls.map(p => {
-                const pVotesSum = p.options.reduce((s, o) => s + o.votes, 0);
+                const singlePollVotesTotal = p.options.reduce((sum, o) => sum + o.votes, 0);
                 return `
-                  <div class="bg-white p-6 sm:p-7 rounded-3xl border border-slate-150 shadow-sm space-y-5">
+                  <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-150 shadow-sm space-y-6">
                     <div>
                       <div class="flex justify-between items-start">
-                        <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
+                        <span class="inline-flex px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-600">
                           ${p.category}
                         </span>
-                        <span class="font-mono text-[10px] text-slate-450 font-bold uppercase">${pVotesSum} cumulative votes</span>
+                        <span class="font-mono text-[10px] text-slate-450 font-bold uppercase">${singlePollVotesTotal} total responses</span>
                       </div>
-                      <h4 class="font-sans font-extrabold text-slate-900 text-sm sm:text-base mt-2">
+                      <h4 class="font-sans font-bold text-slate-900 text-sm sm:text-base mt-2.5">
                         ${p.question}
                       </h4>
                     </div>
 
-                    <div class="space-y-3 pt-2">
+                    <div class="space-y-4 pt-1">
                       ${p.options.map(opt => {
-                        const ratio = pVotesSum > 0 ? Math.round((opt.votes / pVotesSum) * 100) : 0;
+                        const ratio = singlePollVotesTotal > 0 ? Math.round((opt.votes / singlePollVotesTotal) * 100) : 0;
                         return `
                           <div class="space-y-1">
                             <div class="flex justify-between items-center text-xs">
-                              <span class="font-sans font-bold text-slate-700">${opt.text}</span>
-                              <span class="font-mono font-bold text-slate-450">${opt.votes} votes (${ratio}%)</span>
+                              <span class="font-sans font-semibold text-slate-700 truncate pr-4">${opt.text}</span>
+                              <span class="font-mono font-extrabold text-slate-550 shrink-0">${opt.votes} votes (${ratio}%)</span>
                             </div>
                             <div class="w-full h-2.5 bg-slate-50 border border-slate-100 rounded-full overflow-hidden relative">
                               <div class="h-full bg-slate-800 rounded-full" style="width: ${ratio}%"></div>
@@ -791,331 +1050,442 @@
 
 
       /* =========================================================================
-         VIEW: ADMIN CONTROL CONSOLE (STATE CONFIGURATION & POLL DESIGN PANELS)
+         VIEWPORT: ADMINISTRATIVE SECURITY & CAMPAIGN CONTROLLER GATEWAY
          ========================================================================= */
-      function renderAdminPanel() {
+      function renderAdminRoute() {
+        if (!isAdminAuthenticated) {
+          return renderAdminLoginGate();
+        }
+        return renderAuthorizedConsole();
+      }
+
+      // ADMIN SIGN-IN MODULE FOR `qanda@mail.com` and `blahblah` (STRICT FRONTEND CONTROL)
+      function renderAdminLoginGate() {
         return `
-          <div class="space-y-10 animate-fade-in">
+          <div class="max-w-md mx-auto my-10 animate-fade-in select-none">
+            <div class="bg-white rounded-3xl border border-slate-150 shadow-md p-6 sm:p-8 space-y-6 relative overflow-hidden">
+              <div class="absolute top-0 left-0 right-0 h-1.5 ${siteConfig.primaryAccentColor || 'bg-teal-900'}"></div>
+              
+              <div class="text-center space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-slate-50 text-slate-800 border border-slate-100 flex items-center justify-center mx-auto shadow-sm">
+                  <i data-lucide="lock" class="w-6 h-6"></i>
+                </div>
+                <h2 class="font-sans font-black text-slate-900 text-xl tracking-tight leading-none mt-3">Admin Gateway Access</h2>
+                <p class="font-sans text-xs text-slate-400">
+                  Authorized administrative personnel credentials required to access campaign parameters.
+                </p>
+              </div>
+
+              ${adminLoginErrorMsg ? `
+                <div class="p-3.5 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-150 flex items-center gap-2">
+                  <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                  <span>${adminLoginErrorMsg}</span>
+                </div>
+              ` : ""}
+
+              <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+                <div>
+                  <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Email Address</label>
+                  <div class="relative">
+                    <input 
+                      type="email" 
+                      id="login-email-input" 
+                      value="${adminLoginEmail}"
+                      onkeyup="adminLoginEmail = this.value"
+                      placeholder="e.g. qanda@mail.com" 
+                      class="w-full pl-10 pr-4 py-3 bg-slate-50/50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-slate-800"
+                      required
+                    />
+                    <div class="absolute left-3.5 top-3.5 text-slate-400">
+                      <i data-lucide="mail" class="w-4 h-4"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Access Password</label>
+                  <div class="relative">
+                    <input 
+                      type="password" 
+                      id="login-password-input" 
+                      value="${adminLoginPassword}"
+                      onkeyup="adminLoginPassword = this.value"
+                      placeholder="••••••••" 
+                      class="w-full pl-10 pr-4 py-3 bg-slate-50/50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-slate-800"
+                      required
+                    />
+                    <div class="absolute left-3.5 top-3.5 text-slate-400">
+                      <i data-lucide="key-round" class="w-4 h-4"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-amber-50 rounded-xl p-3 text-[10px] text-amber-800 font-semibold leading-relaxed border border-amber-200 flex items-start gap-2">
+                  <i data-lucide="info" class="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-700"></i>
+                  <span>Ensure your admin credentials match. These values preserve frontend saving exclusively of all parameters.</span>
+                </div>
+
+                <button 
+                  type="submit" 
+                  class="w-full py-3 bg-slate-900 hover:bg-slate-950 text-white font-sans text-xs font-bold rounded-xl shadow transition-transform active:scale-[0.99] flex items-center justify-center gap-1.5"
+                >
+                  <i data-lucide="unlock" class="w-4 h-4"></i>
+                  <span>Unlock Administrative Console</span>
+                </button>
+              </form>
+
+            </div>
+          </div>
+        `;
+      }
+
+      function handleAdminLogin(e) {
+        e.preventDefault();
+        
+        // Match user requested security parameters
+        if (adminLoginEmail.trim() === "qanda@mail.com" && adminLoginPassword.trim() === "blahblah") {
+          isAdminAuthenticated = true;
+          adminLoginErrorMsg = "";
+          sessionStorage.setItem("admin_logged_in", "true");
+          syncAdminFormFields();
+          renderApp();
+        } else {
+          adminLoginErrorMsg = "Incorrect credential pairing. Check your email or password code.";
+          renderApp();
+        }
+      }
+
+      function handleAdminLogout() {
+        isAdminAuthenticated = false;
+        sessionStorage.removeItem("admin_logged_in");
+        adminLoginEmail = "";
+        adminLoginPassword = "";
+        routeTo("/");
+      }
+
+
+      /* =========================================================================
+         VIEWPORT: FULL ADMINISTRATIVE OPERATIONS (SURVEYS, BRANDING, ADS MANAGER)
+         ========================================================================= */
+      function renderAuthorizedConsole() {
+        return `
+          <div class="space-y-8 animate-fade-in">
             
-            <!-- Custom Navigation Tabs (Polls vs Site Design Options) -->
-            <div id="admin-tabs" class="flex border-b border-slate-200 gap-1.5 overflow-x-auto pb-px">
+            <!-- Admin Top Navigation Tabs (Polls vs Ads vs Site branding) -->
+            <div id="admin-module-tabs" class="flex border-b border-slate-200 gap-1 overflow-x-auto pb-px">
               <button
-                onclick="setAdminTab('polls')"
-                class="flex items-center gap-2 py-3.5 px-6 font-sans text-sm font-bold border-b-2 transition-all ${
+                onclick="changeAuthorizedTab('polls')"
+                class="flex items-center gap-2 py-3.5 px-5 font-sans text-xs sm:text-sm border-b-2 transition-all shrink-0 ${
                   activeAdminTab === 'polls'
-                    ? 'border-slate-900 text-slate-900 font-extrabold'
+                    ? 'border-slate-900 text-slate-900 font-black'
                     : 'border-transparent text-slate-400 hover:text-slate-700 font-medium'
                 }"
               >
-                <i data-lucide="layers" class="w-4.5 h-4.5"></i>
-                Polls Engine Database
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                Polls Database
               </button>
 
               <button
-                onclick="setAdminTab('site')"
-                class="flex items-center gap-2 py-3.5 px-6 font-sans text-sm font-bold border-b-2 transition-all ${
+                onclick="changeAuthorizedTab('ads')"
+                class="flex items-center gap-2 py-3.5 px-5 font-sans text-xs sm:text-sm border-b-2 transition-all shrink-0 ${
+                  activeAdminTab === 'ads'
+                    ? 'border-slate-900 text-slate-900 font-black'
+                    : 'border-transparent text-slate-400 hover:text-slate-700'
+                }"
+              >
+                <i data-lucide="megaphone" class="w-4 h-4 text-emerald-600"></i>
+                Ads Campaign Manager
+                <span class="px-1.5 py-0.2 bg-emerald-100 text-[#064e43] text-[9px] rounded-full font-bold">Dynamic</span>
+              </button>
+
+              <button
+                onclick="changeAuthorizedTab('site')"
+                class="flex items-center gap-2 py-3.5 px-5 font-sans text-xs sm:text-sm border-b-2 transition-all shrink-0 ${
                   activeAdminTab === 'site'
                     ? 'border-slate-900 text-slate-900'
                     : 'border-transparent text-slate-400 hover:text-slate-700'
                 }"
               >
-                <i data-lucide="settings" class="w-4.5 h-4.5"></i>
-                Design Layout & Menu Links
+                <i data-lucide="settings" class="w-4 h-4"></i>
+                Identity & General Configuration
+              </button>
+
+              <div class="flex-grow select-none"></div>
+
+              <button 
+                onclick="handleAdminLogout()"
+                class="flex items-center gap-1 px-3.5 py-2 hover:bg-rose-50 text-xs text-rose-600 font-bold rounded-lg transition-colors border border-transparent hover:border-rose-200 shrink-0 self-center"
+              >
+                <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                <span>Logout Admin</span>
               </button>
             </div>
 
-            <!-- Dynamic panels toggle -->
-            ${activeAdminTab === 'polls' ? renderAdminPollsEngine() : renderAdminSiteEngine()}
+            <!-- Choose dynamically loaded panel operations -->
+            ${
+              activeAdminTab === "polls" 
+                ? renderAuthorizedPollsTab() 
+                : (activeAdminTab === "ads" ? renderAuthorizedAdsTab() : renderAuthorizedSiteTab())
+            }
 
           </div>
         `;
       }
 
-      function setAdminTab(tab) {
+      function changeAuthorizedTab(tab) {
         activeAdminTab = tab;
         renderApp();
       }
 
-      /* PANEL: ACTIVE POLLS UTILITY CREATORS */
-      function renderAdminPollsEngine() {
-        // Selected header preview generators
-        let previewBgClass = "bg-slate-900";
-        let previewTextClass = "text-slate-100";
+      /* ADMIN TAB: POLLS MANAGER */
+      function renderAuthorizedPollsTab() {
+        let previewHeaderBg = "bg-slate-900";
+        let previewHeaderText = "text-slate-100";
         if (pollFormSelectedColorIdx !== -1 && COLOR_PRESETS[pollFormSelectedColorIdx]) {
-          previewBgClass = COLOR_PRESETS[pollFormSelectedColorIdx].bg;
-          previewTextClass = COLOR_PRESETS[pollFormSelectedColorIdx].text;
+          previewHeaderBg = COLOR_PRESETS[pollFormSelectedColorIdx].bg;
+          previewHeaderText = COLOR_PRESETS[pollFormSelectedColorIdx].text;
         } else {
-          previewBgClass = pollFormCustomBg || "bg-slate-900";
-          previewTextClass = pollFormCustomText || "text-slate-100";
+          previewHeaderBg = pollFormCustomBg || "bg-slate-900";
+          previewHeaderText = pollFormCustomText || "text-slate-100";
         }
 
         return `
           <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
             
-            <!-- Campaign Creation & Modification Form Frame -->
+            <!-- Left editor form frame -->
             <div class="xl:col-span-2 space-y-6">
               <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-150 shadow-sm">
                 
                 <div class="flex justify-between items-start border-b border-slate-100 pb-5 mb-6">
                   <div>
-                    <h3 class="font-sans font-extrabold text-slate-900 text-lg flex items-center gap-2">
-                      <i data-lucide="list-plus" class="w-5.5 h-5.5 text-indigo-600"></i>
-                      ${isEditingPoll ? "Edit Core Poll Configuration" : "Create New Interactive Poll"}
+                    <h3 class="font-sans font-extrabold text-slate-900 text-base md:text-lg flex items-center gap-2">
+                      <i data-lucide="file-edit" class="w-5 h-5 text-[#064e43]"></i>
+                      ${isEditingPoll ? "Edit Selected Poll Definition" : "Launch New Stabilizing Campaign"}
                     </h3>
                     <p class="font-sans text-xs text-slate-500 mt-1">
-                      ${isEditingPoll 
-                        ? `Modifying entry identity "${editingPollId}". Saves immediately.`
-                        : "Author dynamic decisions, choose solid color alignments, and map developer answers."}
+                      ${isEditingPoll ? `Editing record path ${editingPollId}` : "Broadcast new civic issues for public response evaluation."}
                     </p>
                   </div>
 
                   ${isEditingPoll ? `
                     <button
-                      onclick="cancelPollFormEdit()"
-                      class="px-3 py-1.5 bg-slate-100 font-sans text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-200 transition-colors flex items-center gap-1"
+                      onclick="resetPollFormBuffers()"
+                      class="px-2.5 py-1.5 bg-slate-100 font-sans text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-200 transition-colors flex items-center gap-1"
                     >
-                      <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-                      Reset to Create
+                      <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                      Reset Form to Create
                     </button>
                   ` : ''}
                 </div>
 
-                <div id="admin-validation-box" class="hidden p-3.5 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-100 mb-6 flex items-center gap-2">
+                <!-- Validator box warning helper -->
+                <div id="polls-warning-box" class="hidden p-4 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-150 mb-6 flex items-center gap-2 animate-fade-in">
                   <i data-lucide="alert-triangle" class="w-4.5 h-4.5"></i>
-                  <span id="admin-validation-box-msg"></span>
+                  <span id="polls-warning-box-text"></span>
                 </div>
 
-                <form onsubmit="savePollSubmit(event)" class="space-y-6">
-                  <!-- Question Titles -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <form onsubmit="savePollEntity(event)" class="space-y-6">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Poll Question Text</label>
+                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Poll Question Title</label>
                       <input
                         type="text"
-                        id="form-poll-question"
+                        id="poll-input-q"
                         value="${pollFormQuestion}"
-                        onkeyup="updateFormState('question', this.value)"
-                        placeholder="e.g., Which environments are private?"
-                        class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800"
+                        onkeyup="updatePollFormState('question', this.value)"
+                        placeholder="e.g., Primary recovery sector?"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
                         required
                       />
                     </div>
 
                     <div>
-                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Stream Category Title</label>
+                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Focus Category Tag</label>
                       <input
                         type="text"
-                        id="form-poll-category"
+                        id="poll-input-c"
                         value="${pollFormCategory}"
-                        onkeyup="updateFormState('category', this.value)"
-                        placeholder="e.g., Design, DevLife"
-                        class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800"
+                        onkeyup="updatePollFormState('category', this.value)"
+                        placeholder="e.g. Macroeconomics, Tourism"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
                         required
                       />
                     </div>
                   </div>
 
-                  <!-- Details Descripts -->
                   <div>
-                    <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Detailed Descriptive Intro</label>
+                    <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Descriptive Background Instructions</label>
                     <textarea
-                      id="form-poll-description"
-                      onkeyup="updateFormState('description', this.value)"
-                      placeholder="Add an interesting prompt or brief story to motivate participation..."
-                      rows="2.5"
-                      class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800 resize-none"
+                      id="poll-input-desc"
+                      onkeyup="updatePollFormState('description', this.value)"
+                      placeholder="Add high fidelity context background to help voters understand fiscal complexities..."
+                      rows="3"
+                      class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none resize-none"
                       required
                     />${pollFormDescription}</textarea>
                   </div>
 
-                  <!-- Dynamic SOLID presets block -->
-                  <div class="space-y-3.5">
-                    <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest leading-none">
-                      Solid Header Background Styling
-                    </label>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  <!-- Color aligner -->
+                  <div class="space-y-3">
+                    <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Solid Heading Color Styling</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       ${COLOR_PRESETS.map((preset, idx) => `
                         <button
                           type="button"
-                          onclick="updateFormState('colorPreset', ${idx})"
-                          class="flex flex-col text-left p-3 rounded-xl border-2 transition-all ${
+                          onclick="updatePollFormState('colorPreset', ${idx})"
+                          class="flex flex-col text-left p-2.5 rounded-xl border-2 transition-all ${
                             pollFormSelectedColorIdx === idx 
-                              ? 'border-slate-900 bg-slate-50/50 shadow-sm' 
-                              : 'border-slate-100 bg-white hover:border-slate-350'
+                              ? 'border-slate-800 bg-slate-50' 
+                              : 'border-slate-100 bg-white hover:border-slate-300'
                           }"
                         >
-                          <div class="w-full h-4 rounded-md ${preset.bg} mb-1.5"></div>
-                          <span class="font-sans text-[11px] font-bold text-slate-800 leading-none">${preset.label}</span>
+                          <div class="w-full h-4 rounded ${preset.bg} mb-1.5"></div>
+                          <span class="font-sans text-[10px] font-bold text-slate-800">${preset.label}</span>
                         </button>
                       `).join("")}
 
                       <button
                         type="button"
-                        onclick="updateFormState('colorPreset', -1)"
-                        class="flex flex-col text-left p-3 rounded-xl border-2 transition-all ${
+                        onclick="updatePollFormState('colorPreset', -1)"
+                        class="flex flex-col text-left p-2.5 rounded-xl border-2 transition-all ${
                           pollFormSelectedColorIdx === -1 
-                            ? "border-slate-900 bg-slate-50/50" 
+                            ? "border-slate-800 bg-slate-50" 
                             : "border-slate-100 bg-white hover:border-slate-300"
                         }"
                       >
-                        <div class="w-full h-4 rounded-md bg-gradient-to-r from-violet-500 via-rose-500 to-amber-405 mb-1.5"></div>
-                        <span class="font-sans text-[11px] font-bold text-slate-800 leading-none">Custom Style Mode</span>
+                        <div class="w-full h-4 rounded bg-gradient-to-r from-teal-600 via-rose-500 to-amber-500 mb-1.5"></div>
+                        <span class="font-sans text-[10px] font-bold text-slate-800">Custom Mode settings</span>
                       </button>
                     </div>
 
-                    <!-- Custom Inputs panel only displayed in custom mode -->
                     ${pollFormSelectedColorIdx === -1 ? `
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 border border-slate-200/60 rounded-xl animate-fade-in">
+                      <div class="grid grid-cols-2 gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-fade-in">
                         <div>
-                          <label class="block font-sans text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Tailwind Background Classes</label>
+                          <label class="block text-[9px] font-bold text-slate-450 uppercase mb-1">Tailwind Background classes</label>
                           <input
                             type="text"
-                            id="form-poll-custom-bg"
                             value="${pollFormCustomBg}"
-                            onkeyup="updateFormState('customBg', this.value)"
-                            placeholder="bg-gradient-to-r from-indigo-900 to-slate-900"
-                            class="w-full px-3 py-2 bg-white rounded-lg border border-slate-200 font-mono text-[11px]"
+                            onkeyup="updatePollFormState('customBg', this.value)"
+                            placeholder="bg-indigo-950 border-b-4 border-indigo-400"
+                            class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded text-xs font-mono"
                           />
                         </div>
                         <div>
-                          <label class="block font-sans text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Tailwind Text Classes</label>
+                          <label class="block text-[9px] font-bold text-slate-450 uppercase mb-1">Tailwind Text classes</label>
                           <input
                             type="text"
-                            id="form-poll-custom-text"
                             value="${pollFormCustomText}"
-                            onkeyup="updateFormState('customText', this.value)"
-                            placeholder="text-zinc-100"
-                            class="w-full px-3 py-2 bg-white rounded-lg border border-slate-200 font-mono text-[11px]"
+                            onkeyup="updatePollFormState('customText', this.value)"
+                            placeholder="text-indigo-50"
+                            class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded text-xs font-mono"
                           />
                         </div>
                       </div>
                     ` : ""}
                   </div>
 
-                  <!-- SOLID PREVIEW RENDERER -->
-                  <div class="border border-slate-150 rounded-2xl overflow-hidden bg-slate-100">
-                    <div class="px-4 py-2 bg-slate-800 text-white/80 font-mono text-[9px] font-bold uppercase tracking-wider">Site Heading Render Preview</div>
-                    <div class="${previewBgClass} p-6 sm:p-8 flex flex-col gap-2 relative">
-                      <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-white/20 text-white leading-none self-start">
-                        ${pollFormCategory || "CATEGORY"}
-                      </span>
-                      <h4 class="font-sans font-extrabold text-lg sm:text-xl mt-1.5 leading-tight ${previewTextClass}" id="preview-box-q">
-                        ${pollFormQuestion || "Poll Subject Context..."}
-                      </h4>
-                      <p class="font-sans text-xs sm:text-sm mt-0.5 opacity-90 ${previewTextClass}" id="preview-box-desc">
-                        ${pollFormDescription || "Active instruction layout summary displayed for public users..."}
-                      </p>
+                  <!-- Live Header display preview -->
+                  <div class="rounded-2xl overflow-hidden border border-slate-200">
+                    <div class="bg-slate-100 px-3 py-1.5 text-[9px] font-mono font-bold text-slate-400 border-b border-slate-200 uppercase tracking-widest">Public Heading rendering outlook</div>
+                    <div class="p-6 ${previewHeaderBg} text-white space-y-1">
+                      <span class="inline-block px-1.5 py-0.2 bg-white/20 rounded text-[9px] font-black uppercase leading-tight mr-2">${pollFormCategory || "CATEGORY"}</span>
+                      <h4 class="font-sans font-bold text-base leading-tight ${previewHeaderText}">${pollFormQuestion || "Enter target question..."}</h4>
+                      <p class="font-sans text-xs opacity-90 leading-relaxed ${previewHeaderText}">${pollFormDescription || "Add brief story descriptive markers..."}</p>
                     </div>
                   </div>
 
-                  <!-- OPTIONS DECISION AND VOTE SCORES ENGINE (VOTES AND FEEDBACK EDITABLE!) -->
-                  <div class="space-y-4">
+                  <!-- OPTIONS COLLECTION WRAP -->
+                  <div class="space-y-4 pt-4">
                     <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                      <label class="block font-sans text-xs font-bold text-slate-500 uppercase tracking-widest">
-                        Choices List & Target Returns
-                      </label>
+                      <label class="block font-sans text-xs font-bold text-slate-500 uppercase tracking-widest">Interactive Choice Paths</label>
                       <button
                         type="button"
-                        onclick="addPollOptionRow()"
-                        class="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-850 hover:text-indigo-600 transition-colors"
+                        onclick="addPollOptionFormRow()"
+                        class="p-1 px-2.5 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-800 border border-slate-200 transition-colors inline-flex items-center gap-1"
                       >
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                        Add Option Choice
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        Add Choice Row
                       </button>
                     </div>
 
-                    <div class="space-y-3" id="poll-options-form-mount">
+                    <div class="space-y-3">
                       ${pollFormOptions.map((opt, oIdx) => `
-                        <div id="opt-adm-row-${oIdx}" class="p-4 bg-slate-50/50 rounded-2xl border border-slate-150 flex flex-col gap-3.5 relative">
+                        <div class="p-4 bg-slate-50/50 rounded-xl border border-slate-200 flex flex-col gap-3 relative animate-fade-in">
                           <div class="flex justify-between items-center">
-                            <span class="font-sans text-xs font-extrabold text-slate-500 flex items-center gap-1.5">
-                              <span class="inline-flex items-center justify-center w-5.5 h-5.5 bg-slate-900 text-white font-mono text-[10px] rounded-lg">
+                            <span class="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                              <span class="w-5 h-5 bg-slate-900 text-white rounded-lg flex items-center justify-center font-mono text-[10px]">
                                 ${oIdx + 1}
                               </span>
-                              Option Entity
+                              Option parameter
                             </span>
-
                             ${pollFormOptions.length > 2 ? `
-                              <button
-                                type="button"
-                                onclick="removePollOptionRow(${oIdx})"
-                                class="p-1 text-slate-350 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition-all"
-                                title="Remove Choice"
+                              <button 
+                                type="button" 
+                                onclick="removePollOptionFormRow(${oIdx})"
+                                class="p-1 hover:bg-rose-50 text-slate-350 hover:text-rose-600 rounded transition-colors"
                               >
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                               </button>
                             ` : ""}
                           </div>
 
-                          <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
-                            
-                            <!-- Choice label text styling -->
-                            <div class="lg:col-span-4">
-                              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Option Choice Text</label>
+                          <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <div class="md:col-span-4">
+                              <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">Option label text</label>
                               <input
                                 type="text"
                                 value="${opt.text}"
-                                onkeyup="updateOptionField(${oIdx}, 'text', this.value)"
-                                placeholder="e.g. Design Systems"
-                                class="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:outline-none"
+                                onkeyup="updateOptionValue(${oIdx}, 'text', this.value)"
+                                placeholder="Choice answer..."
+                                class="w-full px-3 py-1.5 bg-white rounded border border-slate-200 text-xs"
                                 required
                               />
                             </div>
-
-                            <!-- Feed response changeable text -->
-                            <div class="lg:col-span-6">
-                              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Recipient Response Line</label>
+                            <div class="md:col-span-6">
+                              <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">Analyst response insight</label>
                               <input
                                 type="text"
                                 value="${opt.response}"
-                                onkeyup="updateOptionField(${oIdx}, 'response', this.value)"
-                                placeholder="Recipient view feedback..."
-                                class="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:outline-none"
+                                onkeyup="updateOptionValue(${oIdx}, 'response', this.value)"
+                                placeholder="Analyst insight comment explaining consequences..."
+                                class="w-full px-3 py-1.5 bg-white rounded border border-slate-200 text-xs"
                                 required
                               />
                             </div>
-
-                            <!-- VOTE SCORE EDIT UTILITY! THIS IS COMPLETELY MANUALLY CHANGEABLE! -->
-                            <div class="lg:col-span-2">
-                              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Vote Count</label>
-                              <div class="relative">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value="${opt.votes || 0}"
-                                  onchange="updateOptionField(${oIdx}, 'votes', this.value)"
-                                  class="w-full pl-7 pr-2.5 py-2 bg-white rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-800 text-center"
-                                  required
-                                />
-                                <i data-lucide="hash" class="absolute left-2.5 top-2.5 w-3 h-3 text-slate-450"></i>
-                              </div>
+                            <div class="md:col-span-2">
+                              <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">Votes Count</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value="${opt.votes || 0}"
+                                onchange="updateOptionValue(${oIdx}, 'votes', this.value)"
+                                class="w-full px-2.5 py-1.5 bg-white rounded border border-slate-200 text-xs font-mono font-bold text-center"
+                                required
+                              />
                             </div>
-
                           </div>
                         </div>
                       `).join("")}
                     </div>
                   </div>
 
-                  <!-- Custom Form Triggers -->
-                  <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                  <!-- Actions trigger row -->
+                  <div class="border-t border-slate-100 pt-5 flex justify-end gap-3">
                     ${isEditingPoll ? `
                       <button
                         type="button"
-                        onclick="cancelPollFormEdit()"
-                        class="px-5 py-2.5 bg-slate-105 hover:bg-slate-200 text-slate-700 rounded-xl font-sans text-xs font-bold transition-all"
+                        onclick="resetPollFormBuffers()"
+                        class="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-sans text-xs font-bold hover:bg-slate-200 transition-colors"
                       >
-                        Cancel Editing
+                        Cancel Edit
                       </button>
                     ` : ""}
-
                     <button
                       type="submit"
-                      class="px-6 py-2.5 bg-slate-900 hover:bg-slate-955 text-white rounded-xl font-sans text-xs font-extrabold shadow transition-colors flex items-center gap-1.5"
+                      class="px-6 py-2.5 bg-slate-900 border-b-2 border-slate-950 text-white rounded-xl font-sans text-xs font-extrabold items-center flex gap-1.5"
                     >
                       <i data-lucide="save" class="w-4 h-4"></i>
-                      ${isEditingPoll ? "Save Engine Update ID" : "Broadcast Survey Live"}
+                      <span>${isEditingPoll ? "Update Campaign Record" : "Launch Campaign Live"}</span>
                     </button>
                   </div>
                 </form>
@@ -1123,64 +1493,46 @@
               </div>
             </div>
 
-            <!-- Side column lists all entries inside database -->
+            <!-- Right list of available polls -->
             <div class="xl:col-span-1 space-y-6">
-              <div class="bg-white rounded-3xl p-6 border border-slate-150 shadow-sm flex flex-col gap-4">
+              <div class="bg-white rounded-3xl p-6 border border-slate-150 shadow-sm space-y-4">
                 <div class="border-b border-slate-100 pb-3">
-                  <h3 class="font-sans font-bold text-slate-900 text-base">
-                    Active Campaigns (${polls.length})
-                  </h3>
-                  <p class="font-sans text-xs text-slate-500">Edit values, change structures, or drop entries below.</p>
+                  <h4 class="font-sans font-bold text-slate-900 text-sm">Active Surveys Database (${polls.length})</h4>
+                  <p class="font-sans text-[11px] text-slate-400 leading-normal">Operational audit entries currently serving public clients.</p>
                 </div>
 
-                <div class="space-y-3.5 max-h-[640px] overflow-y-auto pr-1">
+                <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                   ${polls.map(p => {
-                    const optionVotesSum = p.options.reduce((s, o) => s + o.votes, 0);
-                    const isSelected = editingPollId === p.id;
-
+                    const sum = p.options.reduce((s, o) => s + o.votes, 0);
+                    const matchingActive = editingPollId === p.id;
                     return `
-                      <div class="p-3.5 rounded-2xl border transition-all ${
-                        isSelected 
-                          ? "bg-slate-900 text-white border-slate-900 shadow-sm" 
-                          : "bg-slate-50/70 border-slate-150 hover:border-slate-350"
+                      <div class="p-3.5 rounded-xl border transition-all ${
+                        matchingActive 
+                          ? 'bg-slate-900 text-slate-100 border-slate-900 shadow' 
+                          : 'bg-slate-50/60 border-slate-150'
                       }">
-                        <div class="flex justify-between items-start gap-2 mb-1.5">
-                          <span class="inline-flex px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
-                            isSelected ? "bg-white/20 text-white" : "bg-slate-200/80 text-slate-600"
-                          }">
-                            ${p.category}
-                          </span>
-                          <span class="font-mono text-[9px] opacity-70 font-semibold uppercase tracking-wider">
-                            ${optionVotesSum} Votes
-                          </span>
+                        <div class="flex justify-between items-start gap-2 mb-1">
+                          <span class="inline-flex px-1.5 py-0.2 rounded text-[8px] font-bold uppercase tracking-wider ${
+                            matchingActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-650'
+                          }">${p.category}</span>
+                          <span class="font-mono text-[9px] opacity-85">${sum} Votes</span>
                         </div>
-
-                        <h4 class="font-sans font-extrabold text-xs truncate ${isSelected ? 'text-white' : 'text-slate-900'}">
-                          ${p.question}
-                        </h4>
-
-                        <!-- Actions row inside side cards -->
-                        <div class="flex justify-end gap-1.5 mt-3 border-t border-slate-200/10 pt-2.5">
+                        <h5 class="font-sans font-bold text-xs truncate ${matchingActive ? 'text-white' : 'text-slate-800'}">${p.question}</h5>
+                        
+                        <div class="flex justify-end gap-2 mt-3.5 border-t border-slate-200/10 pt-2 shrink-0">
                           <button
-                            onclick="startEditPoll('${p.id}')"
-                            class="p-1 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1 transition-all ${
-                              isSelected
-                                ? "bg-white/20 text-white hover:bg-white/30"
-                                : "bg-slate-100 text-slate-750 hover:bg-slate-200"
+                            onclick="triggerEditPoll('${p.id}')"
+                            class="px-2 py-1 flex items-center gap-1.5 rounded text-[10px] font-bold ${
+                              matchingActive ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-slate-250 bg-slate-200 hover:bg-slate-250 text-slate-700'
                             }"
                           >
                             <i data-lucide="edit-2" class="w-3 h-3"></i>
-                            Edit details
+                            Details
                           </button>
-
                           <button
-                            onclick="deletePollEntity('${p.id}')"
-                            class="p-1 px-1.5 rounded-lg transition-colors ${
-                              isSelected
-                                ? "text-rose-350 hover:bg-rose-500/10"
-                                : "text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                            }"
-                            title="Delete Poll Permanently"
+                            onclick="deletePollRecord('${p.id}')"
+                            class="p-1 rounded text-red-500 hover:bg-red-50"
+                            title="Delete Permanently"
                           >
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                           </button>
@@ -1193,160 +1545,183 @@
 
               <!-- Database Sweeps Panel -->
               <div class="bg-white rounded-3xl p-6 border border-slate-150 shadow-sm space-y-3.5">
-                <h3 class="font-sans font-bold text-slate-900 text-base flex items-center gap-2">
-                  <i data-lucide="rotate-ccw" class="w-5 h-5 text-amber-505"></i>
-                  Client DB Sweeps
+                <h3 class="font-sans font-bold text-slate-950 text-sm flex items-center gap-2 leading-none">
+                  <i data-lucide="sliders" class="w-4 h-4 text-amber-600"></i>
+                  Database Controls
                 </h3>
-                <p class="font-sans text-xs text-slate-400 leading-relaxed">
-                  Reset the database to launch status or sweep registered live votes of all active polls.
+                <p class="font-sans text-[11px] text-slate-400 leading-relaxed">
+                  Clear votes metrics to restart sample sizes, or hard reset surveys to original Sri Lankan default criteria.
                 </p>
-                <div class="space-y-2">
+                <div class="grid grid-cols-1 gap-2">
                   <button
-                    onclick="resetAllVotesToZero()"
-                    class="w-full py-2 px-3.5 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-slate-350 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1"
+                    onclick="resetAllSurveyVotes()"
+                    class="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold font-sans text-xs rounded-xl border border-slate-200 flex items-center justify-center gap-1.5"
                   >
-                    <i data-lucide="undo" class="w-4 h-4 text-slate-400"></i>
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                     Reset All Votes to Zero
                   </button>
                 </div>
               </div>
 
             </div>
-
           </div>
         `;
       }
 
-      /* PANEL: SITE IDENTITY AND DYNAMIC LINKS COMPONENT */
-      function renderAdminSiteEngine() {
+
+      /* ====== ADMIN TAB: ADS CAMPAIGN MANAGER (DYNAMIC) ====== */
+      function renderAuthorizedAdsTab() {
         return `
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
             
-            <!-- BRANDING CONFIGURATION FORM -->
-            <div class="lg:col-span-2 space-y-6">
-              <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-150 shadow-sm animate-fade-in">
+            <!-- Ad Edit/Create Form frame -->
+            <div class="xl:col-span-2 space-y-6">
+              <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-150 shadow-sm">
                 
-                <div class="border-b border-slate-100 pb-5 mb-6">
-                  <h3 class="font-sans font-extrabold text-slate-900 text-lg flex items-center gap-2">
-                    <i data-lucide="layout" class="w-5.5 h-5.5 text-indigo-600"></i>
-                    Interactive Brand & Layout Settings
-                  </h3>
-                  <p class="font-sans text-xs text-slate-500 mt-1">
-                    Change site branding titles, sub-markers, header styles, and footer coordinates instantly.
-                  </p>
-                </div>
-
-                <div id="site-validation-box" class="hidden p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-100 mb-6 flex items-center gap-2">
-                  <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                  <span id="site-validation-box-msg"></span>
-                </div>
-
-                <div id="site-success-box" class="hidden p-3.5 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-100 mb-6 flex items-center gap-2">
-                  <i data-lucide="check" class="w-4.5 h-4.5"></i>
-                  <span>Site settings updated. Dynamic configurations changed cleanly.</span>
-                </div>
-
-                <form onsubmit="saveSiteSettings(event)" class="space-y-6">
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Brand Logo Text</label>
-                      <input
-                        type="text"
-                        id="site-form-brand-name"
-                        value="${siteFormBrandName}"
-                        onkeyup="updateSiteState('brandName', this.value)"
-                        placeholder="e.g. SolidPolls"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Sub brand line</label>
-                      <input
-                        type="text"
-                        id="site-form-brand-sub"
-                        value="${siteFormBrandSub}"
-                        onkeyup="updateSiteState('brandSub', this.value)"
-                        placeholder="e.g. Interactive Engine"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
-                        required
-                      />
-                    </div>
+                <div class="flex justify-between items-start border-b border-slate-100 pb-5 mb-6">
+                  <div>
+                    <h3 class="font-sans font-extrabold text-slate-900 text-base md:text-lg flex items-center gap-2">
+                      <i data-lucide="megaphone" class="w-5 h-5 text-emerald-600"></i>
+                      ${isEditingAd ? "Modify Promotional Campaign Campaign" : "Author New Sponsored Alert"}
+                    </h3>
+                    <p class="font-sans text-xs text-slate-500 mt-1">
+                      Inject sponsored cards, Tourism appeals, or emergency humanitarian support notices seamlessly onto the client’s screen.
+                    </p>
                   </div>
 
-                  <div class="space-y-4">
+                  ${isEditingAd ? `
+                    <button
+                      onclick="resetAdFormBuffers()"
+                      class="px-2.5 py-1.5 bg-slate-100 font-sans text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-200 transition-colors flex items-center gap-1"
+                    >
+                      <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                      Create Mode
+                    </button>
+                  ` : ''}
+                </div>
+
+                <form onsubmit="saveAdCampaign(event)" class="space-y-5">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Home Main Heading Title</label>
+                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Ad Brand / Sponsor Campaign Title</label>
                       <input
                         type="text"
-                        id="site-form-home-title"
-                        value="${siteFormHomeTitle}"
-                        onkeyup="updateSiteState('homeTitle', this.value)"
-                        placeholder="e.g. Human Perspectives"
+                        id="ad-input-title"
+                        value="${adFormTitle}"
+                        onkeyup="adFormTitle = this.value"
+                        placeholder="e.g., Promote local cinnamon exporters"
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
                         required
                       />
                     </div>
-                    <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Home Subheading Context Prompt</label>
-                      <textarea
-                        id="site-form-home-subtitle"
-                        onkeyup="updateSiteState('homeSubtitle', this.value)"
-                        placeholder="e.g. Cast your vote dynamically..."
-                        rows="2.5"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none resize-none"
-                        required
-                      />${siteFormHomeSubtitle}</textarea>
-                    </div>
-                  </div>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Site Primary Accent Bg Class</label>
+                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Context Badge Label</label>
                       <input
                         type="text"
-                        id="site-form-primary-accent"
-                        value="${siteFormPrimaryAccent}"
-                        onkeyup="updateSiteState('primaryAccentColor', this.value)"
-                        placeholder="bg-indigo-600"
-                        class="w-full px-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-mono"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Site Accent Text Class</label>
-                      <input
-                        type="text"
-                        id="site-form-accent-text"
-                        value="${siteFormAccentText}"
-                        onkeyup="updateSiteState('accentTextColor', this.value)"
-                        placeholder="text-indigo-600"
-                        class="w-full px-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-mono"
+                        id="ad-input-badge"
+                        value="${adFormBadgeText}"
+                        onkeyup="adFormBadgeText = this.value"
+                        placeholder="e.g. Tourism Spotlight, Aid Appeal"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
                         required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Footer Credits Text</label>
-                    <input
-                      type="text"
-                      id="site-form-footer-text"
-                      value="${siteFormFooterText}"
-                      onkeyup="updateSiteState('footerText', this.value)"
-                      placeholder="Footer attribution tagline..."
-                      class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
+                    <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Campaign Message Text Description</label>
+                    <textarea
+                      id="ad-input-description"
+                      placeholder="Add an enticing message describing what service readers are supporting by interacting..."
+                      rows="3.5"
+                      class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none resize-none font-sans"
                       required
-                    />
+                    />${adFormDescription}</textarea>
                   </div>
 
-                  <div class="pt-4 border-t border-slate-100 flex justify-end">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Visual Assets Image URL (Optional)</label>
+                      <input
+                        type="url"
+                        id="ad-input-image"
+                        value="${adFormImageUrl}"
+                        onkeyup="adFormImageUrl = this.value"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        class="w-full px-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Target Destination Link (URL)</label>
+                      <input
+                        type="url"
+                        id="ad-input-link"
+                        value="${adFormLinkUrl}"
+                        onkeyup="adFormLinkUrl = this.value"
+                        placeholder="https://www.unicef.org"
+                        class="w-full px-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-mono"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4.5 rounded-2xl border border-slate-200">
+                    <div>
+                      <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">CTA Button Text</label>
+                      <input
+                        type="text"
+                        id="ad-input-button"
+                        value="${adFormButtonText}"
+                        onkeyup="adFormButtonText = this.value"
+                        placeholder="Donate Now, Explore"
+                        class="w-full px-3 py-1.5 bg-white border border-slate-250 rounded text-xs"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Display Placement Position</label>
+                      <select
+                        id="ad-input-position"
+                        class="w-full px-3 py-1.5 bg-white border border-slate-250 rounded text-xs font-bold"
+                        onchange="adFormPosition = this.value"
+                      >
+                        <option value="In-Feed" ${adFormPosition === "In-Feed" ? "selected" : ""}>In-Feed Card</option>
+                        <option value="Top Banner" ${adFormPosition === "Top Banner" ? "selected" : ""}>Top Hero Banner</option>
+                      </select>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-5">
+                      <input
+                        type="checkbox"
+                        id="ad-input-active"
+                        ${adFormIsActive ? "checked" : ""}
+                        onchange="adFormIsActive = this.checked"
+                        class="w-4.5 h-4.5 rounded border-slate-350 text-teal-700 focus:ring-teal-500"
+                      />
+                      <label for="ad-input-active" class="text-xs font-bold text-slate-700 tracking-wider uppercase cursor-pointer">Set Active Status</label>
+                    </div>
+                  </div>
+
+                  <!-- Form Action Buttons -->
+                  <div class="border-t border-slate-100 pt-5 flex justify-end gap-3">
+                    ${isEditingAd ? `
+                      <button
+                        type="button"
+                        onclick="resetAdFormBuffers()"
+                        class="px-4 py-2.5 bg-slate-105 bg-slate-100 text-slate-700 rounded-xl font-sans text-xs font-bold hover:bg-slate-200 transition-colors"
+                      >
+                        Cancel Edit
+                      </button>
+                    ` : ""}
                     <button
                       type="submit"
-                      class="px-6 py-2.5 bg-slate-900 hover:bg-slate-950 text-white rounded-xl font-sans text-xs font-extrabold shadow transition-all flex items-center gap-1.5"
+                      class="px-6 py-2.5 bg-[#064e43] hover:bg-[#033c33] text-white rounded-xl font-sans text-xs font-extrabold items-center flex gap-1.5"
                     >
-                      <i data-lucide="save" class="w-4 h-4"></i>
-                      Save General Branding
+                      <i data-lucide="radio" class="w-4 h-4"></i>
+                      <span>${isEditingAd ? "Save Campaign Updates" : "Publish Sponsored Campaign Live"}</span>
                     </button>
                   </div>
                 </form>
@@ -1354,93 +1729,280 @@
               </div>
             </div>
 
-            <!-- DYNAMIC LINKS MANAGER FOR DYNAMIC BROWSER REBUILD -->
+            <!-- Right list of available Ads -->
+            <div class="xl:col-span-1 space-y-6 animate-fade-in animate-delay-150">
+              <div class="bg-white rounded-3xl p-6 border border-slate-150 shadow-sm space-y-4">
+                <div class="border-b border-slate-100 pb-3">
+                  <h4 class="font-sans font-bold text-slate-900 text-sm">Target Sponsor Roster (${ads.length})</h4>
+                  <p class="font-sans text-[11px] text-slate-400 leading-normal">Configure sponsored banners or aid bulletins directly.</p>
+                </div>
+
+                <div class="space-y-4 max-h-[580px] overflow-y-auto pr-1">
+                  ${ads.map(ad => `
+                    <div class="p-4 rounded-xl border border-slate-150 bg-slate-50/70 space-y-3 relative ${!ad.isActive ? 'opacity-60 border-dashed bg-slate-100' : ''}">
+                      
+                      <div class="flex justify-between items-center gap-2">
+                        <span class="inline-flex px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-widest bg-slate-200 text-slate-750">
+                          ${ad.badgeText}
+                        </span>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                          <span class="font-mono text-[9px] font-extrabold uppercase ${ad.isActive ? 'text-emerald-600' : 'text-slate-400'}">
+                            ${ad.isActive ? "● LIVE" : "■ SLEEP"}
+                          </span>
+                          <span class="text-[9px] uppercase font-bold text-teal-700 bg-teal-50 px-1 rounded">${ad.position}</span>
+                        </div>
+                      </div>
+
+                      <h5 class="font-sans font-bold text-slate-800 text-xs line-clamp-1 leading-tight">${ad.title}</h5>
+                      <p class="font-sans text-[11px] text-slate-400 line-clamp-2 leading-relaxed">${ad.description}</p>
+                      
+                      ${ad.imageUrl ? `
+                        <div class="w-full h-18 rounded-lg overflow-hidden bg-slate-200 border border-slate-150">
+                          <img src="${ad.imageUrl}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+                        </div>
+                      ` : ""}
+
+                      <div class="flex justify-between items-center gap-2 pt-2 border-t border-slate-200/50">
+                        <!-- Quick Toggle status -->
+                        <button
+                          onclick="toggleAdActiveState('${ad.id}')"
+                          class="px-2 py-1 flex items-center gap-1 rounded bg-white hover:bg-slate-100 text-[10px] font-bold border border-slate-200 ${ad.isActive ? 'text-slate-600' : 'text-slate-500'}"
+                        >
+                          <i data-lucide="${ad.isActive ? 'eye-off' : 'eye'}" class="w-2.5 h-2.5"></i>
+                          <span>${ad.isActive ? "Disable AD" : "Enable AD"}</span>
+                        </button>
+
+                        <div class="flex gap-1.5">
+                          <button
+                            onclick="triggerEditAd('${ad.id}')"
+                            class="p-1 px-2 hover:bg-[#064e43] hover:text-white rounded text-[10px] bg-white border border-slate-200 font-bold flex items-center gap-1"
+                          >
+                            <i data-lucide="pencil" class="w-2.5 h-2.5"></i>
+                            Edit
+                          </button>
+                          <button
+                            onclick="deleteAdCampaignRecord('${ad.id}')"
+                            class="p-1 text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        `;
+      }
+
+
+      /* ====== ADMIN TAB: SITE IDENTITY BRANDING CONFIG ====== */
+      function renderAuthorizedSiteTab() {
+        return `
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- General corporate branding metadata forms -->
+            <div class="lg:col-span-2 space-y-6">
+              <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-150 shadow-sm animate-fade-in">
+                
+                <div class="border-b border-slate-100 pb-5 mb-6">
+                  <h3 class="font-sans font-extrabold text-slate-900 text-base md:text-lg flex items-center gap-2">
+                    <i data-lucide="layout" class="w-5.5 h-5.5 text-[#064e43]"></i>
+                    Institutional Branding Config
+                  </h3>
+                  <p class="font-sans text-xs text-slate-500 mt-1">
+                    Redefine site headers, navigation parameters, accents, and descriptive coordinates live.
+                  </p>
+                </div>
+
+                <!-- Live alert feedback box -->
+                <div id="site-success-alert-box" class="hidden p-4 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-250 mb-6 flex items-center gap-2">
+                  <i data-lucide="check" class="w-4.5 h-4.5"></i>
+                  <span>Site configurations optimized. Live viewport rebuild executed!</span>
+                </div>
+
+                <form onsubmit="saveSiteBrandingConfigs(event)" class="space-y-5">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Brand Logo Text</label>
+                      <input
+                        type="text"
+                        value="${siteFormBrandName}"
+                        onkeyup="siteFormBrandName = this.value"
+                        placeholder="e.g. LankaCrisis Q&A"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Brand Secondary Label Tag</label>
+                      <input
+                        type="text"
+                        value="${siteFormBrandSub}"
+                        onkeyup="siteFormBrandSub = this.value"
+                        placeholder="e.g. Civic Consensus Engine"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Survey Main Hero Headliner</label>
+                    <input
+                      type="text"
+                      value="${siteFormHomeTitle}"
+                      onkeyup="siteFormHomeTitle = this.value"
+                      class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Survey Sub-Introduction Prompt</label>
+                    <textarea
+                      onkeyup="siteFormHomeSubtitle = this.value"
+                      rows="3"
+                      class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none resize-none font-sans"
+                      required
+                    />${siteFormHomeSubtitle}</textarea>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Tailwind Accent Color Bg (Logo/Tabs)</label>
+                      <input
+                        type="text"
+                        value="${siteFormPrimaryAccent}"
+                        onkeyup="siteFormPrimaryAccent = this.value"
+                        placeholder="bg-[#064e43]"
+                        class="w-full px-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-mono"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Tailwind Accent Text class</label>
+                      <input
+                        type="text"
+                        value="${siteFormAccentText}"
+                        onkeyup="siteFormAccentText = this.value"
+                        placeholder="text-[#064e43]"
+                        class="w-full px-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-mono"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Footer Credits Attribution line</label>
+                    <input
+                      type="text"
+                      value="${siteFormFooterText}"
+                      onkeyup="siteFormFooterText = this.value"
+                      class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div class="border-t border-slate-100 pt-5 flex justify-end">
+                    <button
+                      type="submit"
+                      class="px-6 py-2.5 bg-slate-900 hover:bg-slate-950 text-white rounded-xl font-sans text-xs font-black shadow transition-all leading-none items-center flex gap-1.5"
+                    >
+                      <i data-lucide="save" class="w-4 h-4"></i>
+                      <span>Save Brand Specifications</span>
+                    </button>
+                  </div>
+                </form>
+
+              </div>
+            </div>
+
+            <!-- Handheld representation config links menu list sidebar -->
             <div class="lg:col-span-1 space-y-6">
               <div class="bg-white rounded-3xl p-6 border border-slate-150 shadow-sm flex flex-col gap-4">
-                
                 <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
                   <div>
-                    <h3 class="font-sans font-bold text-slate-900 text-base">
-                      Header Navigation Menu
-                    </h3>
-                    <p class="font-sans text-xs text-slate-500">Edit, add, or drop menu links below.</p>
+                    <h4 class="font-sans font-bold text-slate-900 text-sm">Navigation Links</h4>
+                    <p class="font-sans text-[11px] text-slate-400">Configure header menu paths.</p>
                   </div>
                   
                   <button
-                    onclick="addNavItemRow()"
-                    class="p-1 px-2.5 bg-slate-900 hover:bg-slate-950 rounded-lg text-white font-sans text-[10px] font-extrabold tracking-wider uppercase inline-flex items-center gap-1"
-                    title="Add Custom Menu Tab Link"
+                    onclick="addDynamicNavItemRow()"
+                    class="px-2 py-1 bg-slate-900 text-white font-sans text-[10px] font-extrabold uppercase tracking-widest rounded-lg flex items-center gap-1"
                   >
                     <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                     Add
                   </button>
                 </div>
 
-                <div class="space-y-4 max-h-[580px] overflow-y-auto pr-1">
+                <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
                   ${siteFormNavItems.map((item, index) => `
-                    <div id="nav-manage-${item.id}" class="p-3 bg-slate-50 border border-slate-155 rounded-xl space-y-3 relative animate-fade-in">
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3 relative animate-fade-in">
                       
                       <div class="flex justify-between items-center">
-                        <span class="font-mono text-[9px] text-slate-400 font-extrabold uppercase bg-white px-1.5 py-0.5 rounded border border-slate-100">
-                          LINK CONTEXT #${index + 1}
+                        <span class="font-mono text-[9px] text-[#064e43] font-black uppercase bg-white border border-teal-100 px-1.5 py-0.5 rounded">
+                          Link #${index + 1}
                         </span>
-
-                        <button
-                          onclick="removeNavItemRow(${index})"
-                          class="p-1 text-slate-350 hover:text-rose-600 rounded"
-                          title="Remove Navigation Link"
-                        >
-                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                        </button>
+                        
+                        ${siteFormNavItems.length > 1 ? `
+                          <button
+                            onclick="removeDynamicNavItemRow(${index})"
+                            class="p-1 text-slate-350 hover:text-red-500 rounded"
+                          >
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                          </button>
+                        ` : ''}
                       </div>
 
-                      <div class="space-y-2">
+                      <div class="space-y-2 text-xs">
                         <div>
-                          <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Label Text</label>
+                          <label class="block text-[9px] font-bold text-slate-450 uppercase mb-0.5">Label Title</label>
                           <input
                             type="text"
                             value="${item.label}"
-                            onkeyup="updateNavItemField(${index}, 'label', this.value)"
-                            class="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs"
-                            placeholder="Home"
+                            onkeyup="updateDynamicNavItemProperty(${index}, 'label', this.value)"
+                            class="w-full px-2.5 py-1 bg-white border border-slate-205 rounded font-bold"
                             required
                           />
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
                           <div>
-                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Path Link</label>
+                            <label class="block text-[9px] font-bold text-slate-450 uppercase mb-0.5">Router Path</label>
                             <input
                               type="text"
                               value="${item.path}"
-                              onkeyup="updateNavItemField(${index}, 'path', this.value)"
-                              class="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-mono"
-                              placeholder="/"
+                              onkeyup="updateDynamicNavItemProperty(${index}, 'path', this.value)"
+                              class="w-full px-2.5 py-1 bg-white border border-slate-205 rounded font-mono"
                               required
                             />
                           </div>
 
                           <div>
-                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Lucide Icon</label>
+                            <label class="block text-[9px] font-bold text-slate-450 uppercase mb-0.5">Lucide Icon</label>
                             <input
                               type="text"
                               value="${item.iconName}"
-                              onkeyup="updateNavItemField(${index}, 'iconName', this.value)"
-                              class="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-mono"
-                              placeholder="Vote or generic"
+                              onkeyup="updateDynamicNavItemProperty(${index}, 'iconName', this.value)"
+                              class="w-full px-2.5 py-1 bg-white border border-slate-205 rounded font-mono"
                               required
                             />
                           </div>
                         </div>
 
                         <div>
-                          <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Optional Badge Tag</label>
+                          <label class="block text-[9px] font-bold text-slate-450 uppercase mb-0.5">Optional badge tag</label>
                           <input
                             type="text"
                             value="${item.badgeText || ''}"
-                            onkeyup="updateNavItemField(${index}, 'badgeText', this.value)"
-                            class="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs"
-                            placeholder="e.g. New (leave blank)"
+                            onkeyup="updateDynamicNavItemProperty(${index}, 'badgeText', this.value)"
+                            class="w-full px-2.5 py-1 bg-white border border-slate-205 rounded"
+                            placeholder="e.g. New"
                           />
                         </div>
                       </div>
@@ -1458,43 +2020,38 @@
 
 
       /* =========================================================================
-         UTILITIES AND DYNAMIC USER TRIGGERS
+         AUTHORIZED BACKSTAGE CALCULATOR HANDLERS & BUFFER UPDATE ROUTINES
          ========================================================================= */
 
-      // UPDATE CREATE/EDIT POLL FIELDS STATS
-      function updateFormState(field, val) {
+      // POLLS MUTATOR HANDLERS
+      function updatePollFormState(field, value) {
         if (field === 'question') {
-          pollFormQuestion = val;
-          const pElement = document.getElementById("preview-box-q");
-          if (pElement) pElement.innerText = val || "Poll Subject Context...";
+          pollFormQuestion = value;
+          const label = document.getElementById("poll-input-q");
+          if (label) label.value = value;
         } else if (field === 'category') {
-          pollFormCategory = val;
-          renderApp(); // Requires fresh preset triggers redecorating entire panels
+          pollFormCategory = value;
         } else if (field === 'description') {
-          pollFormDescription = val;
-          const pDescElement = document.getElementById("preview-box-desc");
-          if (pDescElement) pDescElement.innerText = val || "Active instruction layout summary displayed for public users...";
+          pollFormDescription = value;
         } else if (field === 'colorPreset') {
-          pollFormSelectedColorIdx = val;
-          renderApp();
+          pollFormSelectedColorIdx = value;
         } else if (field === 'customBg') {
-          pollFormCustomBg = val;
-          renderApp();
+          pollFormCustomBg = value;
         } else if (field === 'customText') {
-          pollFormCustomText = val;
-          renderApp();
+          pollFormCustomText = value;
         }
+        renderApp();
       }
 
-      function updateOptionField(idx, field, val) {
-        if (field === 'votes') {
-          pollFormOptions[idx].votes = Math.max(0, parseInt(val) || 0);
+      function updateOptionValue(index, property, value) {
+        if (property === 'votes') {
+          pollFormOptions[index].votes = Math.max(0, parseInt(value) || 0);
         } else {
-          pollFormOptions[idx][field] = val;
+          pollFormOptions[index][property] = value;
         }
       }
 
-      function addPollOptionRow() {
+      function addPollOptionFormRow() {
         pollFormOptions.push({
           text: "",
           response: "",
@@ -1503,68 +2060,60 @@
         renderApp();
       }
 
-      function removePollOptionRow(oIdx) {
-        if (pollFormOptions.length <= 2) {
-          const valBox = document.getElementById("admin-validation-box");
-          const valMsg = document.getElementById("admin-validation-box-msg");
-          if (valBox && valMsg) {
-            valMsg.innerText = "Each poll requires at least two choices to remain valid.";
-            valBox.classList.remove("hidden");
-          }
-          return;
-        }
-        pollFormOptions = pollFormOptions.filter((_, i) => i !== oIdx);
+      function removePollOptionFormRow(index) {
+        pollFormOptions = pollFormOptions.filter((_, i) => i !== index);
         renderApp();
       }
 
-      // SUBMIT ENTIRE POLL CONFIG TO THE FILE DATABASE REPLAY
-      function savePollSubmit(e) {
+      function savePollEntity(e) {
         e.preventDefault();
-        const valBox = document.getElementById("admin-validation-box");
-        const valMsg = document.getElementById("admin-validation-box-msg");
-        if (valBox) valBox.classList.add("hidden");
+        const warnBox = document.getElementById("polls-warning-box");
+        const warnText = document.getElementById("polls-warning-box-text");
+        if (warnBox) warnBox.classList.add("hidden");
 
-        if (!pollFormQuestion.trim() || !pollFormDescription.trim() || !pollFormCategory.trim()) {
-          if (valBox && valMsg) {
-            valMsg.innerText = "Please complete all active text boxes.";
-            valBox.classList.remove("hidden");
+        // Validate basic criteria checks
+        if (!pollFormQuestion.trim() || !pollFormCategory.trim() || !pollFormDescription.trim()) {
+          if (warnBox && warnText) {
+            warnText.innerText = "Please complete all active text boxes before submitting.";
+            warnBox.classList.remove("hidden");
           }
           return;
         }
 
-        const hasEmptyOptions = pollFormOptions.some(o => !o.text.trim() || !o.response.trim());
-        if (hasEmptyOptions) {
-          if (valBox && valMsg) {
-            valMsg.innerText = "All choices require both option text labels and recipient response paths.";
-            valBox.classList.remove("hidden");
+        const missingAnswers = pollFormOptions.some(opt => !opt.text.trim() || !opt.response.trim());
+        if (missingAnswers) {
+          if (warnBox && warnText) {
+            warnText.innerText = "All choice options require both active option text labels and custom response insights.";
+            warnBox.classList.remove("hidden");
           }
           return;
         }
 
-        // Color mapping parameters calculation
-        let calculatedBg = "";
-        let calculatedText = "";
-        let calculatedAccent = "";
-
+        // Color mapping resolve
+        let solvedBg = "";
+        let solvedText = "";
         if (pollFormSelectedColorIdx !== -1) {
           const preset = COLOR_PRESETS[pollFormSelectedColorIdx];
-          calculatedBg = preset.bg;
-          calculatedText = preset.text;
+          solvedBg = preset.bg;
+          solvedText = preset.text;
         } else {
-          calculatedBg = pollFormCustomBg.trim() || "bg-slate-900 border-b-4 border-indigo-500";
-          calculatedText = pollFormCustomText.trim() || "text-slate-100";
+          solvedBg = pollFormCustomBg.trim() || "bg-slate-900 border-b-4 border-emerald-400";
+          solvedText = pollFormCustomText.trim() || "text-slate-100";
         }
 
-        // Accent theme colors setup
-        if (calculatedBg.includes("indigo")) calculatedAccent = "bg-indigo-600 hover:bg-indigo-700 text-white";
-        else if (calculatedBg.includes("emerald")) calculatedAccent = "bg-emerald-600 hover:bg-emerald-700 text-white";
-        else if (calculatedBg.includes("rose")) calculatedAccent = "bg-rose-600 hover:bg-rose-700 text-white";
-        else if (calculatedBg.includes("violet")) calculatedAccent = "bg-violet-600 hover:bg-violet-700 text-white";
-        else if (calculatedBg.includes("amber")) calculatedAccent = "bg-amber-600 hover:bg-amber-705 text-white";
-        else calculatedAccent = "bg-slate-800 hover:bg-slate-900 text-white";
+        let solvedAccent = "";
+        if (solvedBg.includes("emerald") || solvedBg.includes("#064e43")) {
+          solvedAccent = "bg-[#064e43] hover:bg-[#043d34] text-white";
+        } else if (solvedBg.includes("slate") || solvedBg.includes("sapphire") || solvedBg.includes("zinc")) {
+          solvedAccent = "bg-slate-900 hover:bg-slate-850 text-white";
+        } else if (solvedBg.includes("ruby") || solvedBg.includes("red") || solvedBg.includes("rose")) {
+          solvedAccent = "bg-rose-900 hover:bg-rose-955 text-white";
+        } else {
+          solvedAccent = "bg-teal-900 hover:bg-teal-950 text-white";
+        }
 
         if (isEditingPoll && editingPollId) {
-          // Edit state updating
+          // Perform record override update
           polls = polls.map(p => {
             if (p.id === editingPollId) {
               return {
@@ -1572,69 +2121,67 @@
                 question: pollFormQuestion.trim(),
                 description: pollFormDescription.trim(),
                 category: pollFormCategory.trim(),
-                headingColor: calculatedBg,
-                textColor: calculatedText,
-                accentColor: calculatedAccent,
-                options: pollFormOptions.map((opt, oIdx) => ({
-                  id: opt.id || `opt-${editingPollId}-${oIdx}-${Date.now()}`,
-                  text: opt.text.trim(),
-                  response: opt.response.trim(),
-                  votes: opt.votes || 0
+                headingColor: solvedBg,
+                textColor: solvedText,
+                accentColor: solvedAccent,
+                options: pollFormOptions.map((o, idx) => ({
+                  id: o.id || `opt-${Date.now()}-${idx}`,
+                  text: o.text.trim(),
+                  response: o.response.trim(),
+                  votes: o.votes || 0
                 }))
               };
             }
             return p;
           });
         } else {
-          // Create new record entity
-          const newId = `poll-${Date.now()}`;
-          const newEntity = {
-            id: newId,
+          // Initialize fresh new record entry parameters
+          const freshId = `poll-${Date.now()}`;
+          const freshEntity = {
+            id: freshId,
             question: pollFormQuestion.trim(),
             description: pollFormDescription.trim(),
             category: pollFormCategory.trim(),
-            headingColor: calculatedBg,
-            textColor: calculatedText,
-            accentColor: calculatedAccent,
-            options: pollFormOptions.map((opt, oIdx) => ({
-              id: `opt-${newId}-${oIdx}`,
-              text: opt.text.trim(),
-              response: opt.response.trim(),
-              votes: opt.votes || 0
+            headingColor: solvedBg,
+            textColor: solvedText,
+            accentColor: solvedAccent,
+            options: pollFormOptions.map((o, idx) => ({
+              id: `opt-${freshId}-${idx}`,
+              text: o.text.trim(),
+              response: o.response.trim(),
+              votes: o.votes || 0
             }))
           };
-          polls = [newEntity, ...polls];
+          polls = [freshEntity, ...polls];
         }
 
         localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
-        cancelPollFormEdit();
+        resetPollFormBuffers();
         renderApp();
       }
 
-      function startEditPoll(id) {
-        const item = polls.find(p => p.id === id);
-        if (!item) return;
+      function triggerEditPoll(id) {
+        const matchingRecord = polls.find(p => p.id === id);
+        if (!matchingRecord) return;
 
         isEditingPoll = true;
         editingPollId = id;
-        pollFormQuestion = item.question;
-        pollFormCategory = item.category;
-        pollFormDescription = item.description;
+        pollFormQuestion = matchingRecord.question;
+        pollFormCategory = matchingRecord.category;
+        pollFormDescription = matchingRecord.description;
 
-        // Sync solid color preset indices
-        const foundIndex = COLOR_PRESETS.findIndex(c => c.bg === item.headingColor);
-        if (foundIndex !== -1) {
-          pollFormSelectedColorIdx = foundIndex;
+        const presetIdx = COLOR_PRESETS.findIndex(c => c.bg === matchingRecord.headingColor);
+        if (presetIdx !== -1) {
+          pollFormSelectedColorIdx = presetIdx;
           pollFormCustomBg = "";
           pollFormCustomText = "";
         } else {
           pollFormSelectedColorIdx = -1;
-          pollFormCustomBg = item.headingColor;
-          pollFormCustomText = item.textColor;
+          pollFormCustomBg = matchingRecord.headingColor;
+          pollFormCustomText = matchingRecord.textColor;
         }
 
-        // Dynamic deep copies of choices lists options
-        pollFormOptions = item.options.map(o => ({
+        pollFormOptions = matchingRecord.options.map(o => ({
           id: o.id,
           text: o.text,
           response: o.response,
@@ -1645,37 +2192,37 @@
         window.scrollTo({ top: 120, behavior: "smooth" });
       }
 
-      function cancelPollFormEdit() {
+      function resetPollFormBuffers() {
         isEditingPoll = false;
         editingPollId = null;
         pollFormQuestion = "";
-        pollFormCategory = "Directives";
+        pollFormCategory = "Macroeconomics";
         pollFormDescription = "";
         pollFormSelectedColorIdx = 0;
         pollFormCustomBg = "";
         pollFormCustomText = "";
         pollFormOptions = [
-          { text: "Option A", response: "Excellent choice! You possess the traits of a builder.", votes: 0 },
-          { text: "Option B", response: "Intriguing angle. You see opportunities in every challenge.", votes: 0 },
-          { text: "Option C", response: "Pragmatic decision. Reliability is your finest quality.", votes: 0 }
+          { text: "Option A", response: "Excellent analysis on stabilization guidelines.", votes: 0 },
+          { text: "Option B", response: "Very sensible approach to public accountability.", votes: 0 },
+          { text: "Option C", response: "Plausible reform pathway. Reliability remains paramount.", votes: 0 }
         ];
         renderApp();
       }
 
-      function deletePollEntity(id) {
-        if (confirm("Are you sure you want to permanently delete this poll entry? This actions sweeps all stored votes.")) {
+      function deletePollRecord(id) {
+        if (confirm("Are you sure you want to permanently delete this poll? All user accumulated sample votes will be dropped.")) {
           polls = polls.filter(p => p.id !== id);
           localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
           if (editingPollId === id) {
-            cancelPollFormEdit();
+            resetPollFormBuffers();
           } else {
             renderApp();
           }
         }
       }
 
-      function resetAllVotesToZero() {
-        if (confirm("Are you sure you want to reset ALL votes of every active poll entry back to 0?")) {
+      function resetAllSurveyVotes() {
+        if (confirm("Are you sure you want to reset all survey accumulated votes indicators back to 0? This sweeps your civic telemetry database clean.")) {
           polls = polls.map(p => ({
             ...p,
             options: p.options.map(o => ({ ...o, votes: 0 }))
@@ -1683,103 +2230,185 @@
           localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
           userVotes = {};
           localStorage.removeItem(STORAGE_USER_VOTES_KEY);
-          cancelPollFormEdit();
+          resetPollFormBuffers();
         }
       }
 
-      // UPDATE SITE BRANDING LOGICS
-      function updateSiteState(field, val) {
-        if (field === 'brandName') siteFormBrandName = val;
-        else if (field === 'brandSub') siteFormBrandSub = val;
-        else if (field === 'homeTitle') siteFormHomeTitle = val;
-        else if (field === 'homeSubtitle') siteFormHomeSubtitle = val;
-        else if (field === 'primaryAccentColor') siteFormPrimaryAccent = val;
-        else if (field === 'accentTextColor') siteFormAccentText = val;
-        else if (field === 'footerText') siteFormFooterText = val;
-      }
 
-      function updateNavItemField(index, field, val) {
-        siteFormNavItems[index][field] = val;
-      }
-
-      function addNavItemRow() {
-        const newRecord = {
-          id: `nav-${Date.now()}`,
-          label: "New Tab Page",
-          path: `/custom-${siteFormNavItems.length}`,
-          iconName: "Sparkles",
-          badgeText: ""
-        };
-        siteFormNavItems.push(newRecord);
-        renderApp();
-      }
-
-      function removeNavItemRow(index) {
-        if (siteFormNavItems.length <= 1) {
-          const sBox = document.getElementById("site-validation-box");
-          const sBoxMsg = document.getElementById("site-validation-box-msg");
-          if (sBox && sBoxMsg) {
-            sBoxMsg.innerText = "You must have at least one active navigation menu item.";
-            sBox.classList.remove("hidden");
-          }
+      // DYNAMIC SPONSOR/ADS MUTATOR HANDLERS
+      function saveAdCampaign(e) {
+        e.preventDefault();
+        
+        if (!adFormTitle.trim() || !adFormDescription.trim() || !adFormLinkUrl.trim()) {
+          alert("All campaign parameters require complete text descriptors.");
           return;
         }
-        siteFormNavItems = siteFormNavItems.filter((_, i) => i !== index);
+
+        if (isEditingAd && editingAdId) {
+          // Target override updates
+          ads = ads.map(a => {
+            if (a.id === editingAdId) {
+              return {
+                ...a,
+                title: adFormTitle.trim(),
+                description: adFormDescription.trim(),
+                imageUrl: adFormImageUrl.trim(),
+                linkUrl: adFormLinkUrl.trim(),
+                badgeText: adFormBadgeText.trim() || "Sponsored Campaign",
+                position: adFormPosition,
+                buttonText: adFormButtonText.trim() || "Learn More",
+                isActive: adFormIsActive
+              };
+            }
+            return a;
+          });
+        } else {
+          // fresh card generation parameters
+          const recordId = `ad-${Date.now()}`;
+          const newAd = {
+            id: recordId,
+            title: adFormTitle.trim(),
+            description: adFormDescription.trim(),
+            imageUrl: adFormImageUrl.trim(),
+            linkUrl: adFormLinkUrl.trim(),
+            badgeText: adFormBadgeText.trim() || "Sponsored Campaign",
+            position: adFormPosition,
+            buttonText: adFormButtonText.trim() || "Learn More",
+            isActive: adFormIsActive
+          };
+          ads = [newAd, ...ads];
+        }
+
+        localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(ads));
+        resetAdFormBuffers();
         renderApp();
       }
 
-      function saveSiteSettings(e) {
+      function triggerEditAd(id) {
+        const item = ads.find(a => a.id === id);
+        if (!item) return;
+
+        isEditingAd = true;
+        editingAdId = id;
+        adFormTitle = item.title;
+        adFormDescription = item.description;
+        adFormImageUrl = item.imageUrl || "";
+        adFormLinkUrl = item.linkUrl;
+        adFormBadgeText = item.badgeText || "Sponsored Campaign";
+        adFormPosition = item.position || "In-Feed";
+        adFormButtonText = item.buttonText || "Learn More";
+        adFormIsActive = item.isActive;
+
+        renderApp();
+        window.scrollTo({ top: 120, behavior: "smooth" });
+      }
+
+      function resetAdFormBuffers() {
+        isEditingAd = false;
+        editingAdId = null;
+        adFormTitle = "";
+        adFormDescription = "";
+        adFormImageUrl = "";
+        adFormLinkUrl = "";
+        adFormBadgeText = "Sponsored Campaign";
+        adFormPosition = "In-Feed";
+        adFormButtonText = "Learn More";
+        adFormIsActive = true;
+        renderApp();
+      }
+
+      function deleteAdCampaignRecord(id) {
+        if (confirm("Are you sure you want to drop this promotional ad campaign? It will disappear from all user frames immediately.")) {
+          ads = ads.filter(a => a.id !== id);
+          localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(ads));
+          if (editingAdId === id) {
+            resetAdFormBuffers();
+          } else {
+            renderApp();
+          }
+        }
+      }
+
+      function toggleAdActiveState(id) {
+        ads = ads.map(a => {
+          if (a.id === id) {
+            return { ...a, isActive: !a.isActive };
+          }
+          return a;
+        });
+        localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(ads));
+        renderApp();
+      }
+
+
+      // BRAND IDENTITY BRANDING CONFIG SAVING
+      function updateDynamicNavItemProperty(index, property, value) {
+        siteFormNavItems[index][property] = value;
+      }
+
+      function addDynamicNavItemRow() {
+        siteFormNavItems.push({
+          id: `nav-${Date.now()}`,
+          label: "Consensus Forum",
+          path: `/custom-${siteFormNavItems.length}`,
+          iconName: "HelpCircle",
+          badgeText: ""
+        });
+        renderApp();
+      }
+
+      function removeDynamicNavItemRow(index) {
+        if (siteFormNavItems.length <= 1) {
+          alert("You require at least one active navigation item target link.");
+          return;
+        }
+        siteFormNavItems = siteFormNavItems.filter((_, idx) => idx !== index);
+        renderApp();
+      }
+
+      function saveSiteBrandingConfigs(e) {
         e.preventDefault();
-        const sBox = document.getElementById("site-validation-box");
-        const sBoxMsg = document.getElementById("site-validation-box-msg");
-        const successBox = document.getElementById("site-success-box");
         
-        if (sBox) sBox.classList.add("hidden");
-        if (successBox) successBox.classList.add("hidden");
+        const successAlet = document.getElementById("site-success-alert-box");
+        if (successAlet) successAlet.classList.add("hidden");
 
         if (!siteFormBrandName.trim() || !siteFormHomeTitle.trim() || !siteFormHomeSubtitle.trim()) {
-          if (sBox && sBoxMsg) {
-            sBoxMsg.innerText = "Brand, Home Title, and Home Description lines are required.";
-            sBox.classList.remove("hidden");
-          }
+          alert("Fields matching brand logo, headline title, and descript intro are strictly required.");
           return;
         }
 
-        const hasEmptyNavs = siteFormNavItems.some(n => !n.label.trim() || !n.path.trim());
-        if (hasEmptyNavs) {
-          if (sBox && sBoxMsg) {
-            sBoxMsg.innerText = "All active menu paths require valid text labels.";
-            sBox.classList.remove("hidden");
-          }
+        const emptyPaths = siteFormNavItems.some(n => !n.label.trim() || !n.path.trim());
+        if (emptyPaths) {
+          alert("Each active menu link requires an unambiguous label and routing key target path.");
           return;
         }
 
+        // commit configurations state sync
         siteConfig = {
           brandName: siteFormBrandName.trim(),
           brandSub: siteFormBrandSub.trim(),
           homeTitle: siteFormHomeTitle.trim(),
           homeSubtitle: siteFormHomeSubtitle.trim(),
-          primaryAccentColor: siteFormPrimaryAccent.trim() || "bg-indigo-600",
-          accentTextColor: siteFormAccentText.trim() || "text-indigo-600",
-          footerText: siteFormFooterText.trim() || "A highly-polished feedback app.",
+          primaryAccentColor: siteFormPrimaryAccent.trim() || "bg-[#064e43]",
+          accentTextColor: siteFormAccentText.trim() || "text-[#064e43]",
+          footerText: siteFormFooterText.trim() || "A transparent platform for civic perspectives.",
           navItems: siteFormNavItems
         };
 
         localStorage.setItem(STORAGE_SITE_CONFIG_KEY, JSON.stringify(siteConfig));
         
-        if (successBox) {
-          successBox.classList.remove("hidden");
+        if (successAlet) {
+          successAlet.classList.remove("hidden");
           window.scrollTo({ top: 120, behavior: "smooth" });
           setTimeout(() => {
-            successBox.classList.add("hidden");
-          }, 4000);
+            successAlet.classList.add("hidden");
+          }, 3500);
         }
 
-        // Immediately update branding styles live
         renderApp();
       }
 
-      // LAUNCH THE PLATFORM
+      // LAUNCH THE CIVIC PERSPECTIVE ENGINE
       initAppState();
       renderApp();
 
