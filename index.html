@@ -137,6 +137,30 @@
         }
       };
 
+      // Recursive safe serialization utility to protect local storage from Firebase classes / circular structures
+      function safeStringify(value, space) {
+        const seen = new WeakSet();
+        return JSON.stringify(value, function(key, val) {
+          if (val && typeof val === "object") {
+            if (seen.has(val)) {
+              return "[Circular]";
+            }
+            seen.add(val);
+            const proto = Object.getPrototypeOf(val);
+            if (proto && proto.constructor && proto.constructor.name !== "Object" && proto.constructor.name !== "Array") {
+              if (val.id && typeof val.id === "string") {
+                return { id: val.id };
+              }
+              return null;
+            }
+          }
+          if (typeof val === "function") {
+            return undefined;
+          }
+          return val;
+        }, space);
+      }
+
       class CompatDocumentReference {
         constructor(db, path, docId, utils) {
           this.db = db;
@@ -146,10 +170,10 @@
         }
         onSnapshot(onNext, onError) {
           const docRef = this.utils.doc(this.db, this.path, this.docId);
-          return this.utils.onSnapshot(docRef, function(snapshot) {
+          return this.utils.onSnapshot(docRef, function(snapDoc) {
             onNext({
-              exists: snapshot.exists(),
-              data: function() { return snapshot.data(); }
+              exists: snapDoc.exists(),
+              data: function() { return snapDoc.data(); }
             });
           }, onError);
         }
@@ -190,10 +214,10 @@
             onNext({
               empty: snapshot.empty,
               forEach: function(callback) {
-                snapshot.forEach(function(doc) {
+                snapshot.forEach(function(snapDoc) {
                   callback({
-                    id: doc.id,
-                    data: function() { return doc.data(); }
+                    id: snapDoc.id,
+                    data: function() { return snapDoc.data(); }
                   });
                 });
               }
@@ -237,15 +261,16 @@
 
         // 1. Sync Config Doc
         db.collection("configs").doc("site_config").onSnapshot(function(doc) {
-          if (doc.exists) {
+          if (doc.exists && doc.data() && doc.data().brandName) {
             siteConfig = doc.data();
-            localStorage.setItem(STORAGE_SITE_CONFIG_KEY, JSON.stringify(siteConfig));
+            localStorage.setItem(STORAGE_SITE_CONFIG_KEY, safeStringify(siteConfig));
             console.log("Firestore Site Config updated:", siteConfig);
             syncAdminFormFields();
             renderApp();
           } else {
             // Seed initial config to database
-            db.collection("configs").doc("site_config").set(siteConfig || DEFAULT_SITE_CONFIG).catch(e => console.error(e));
+            const configToSeed = (siteConfig && siteConfig.brandName) ? siteConfig : DEFAULT_SITE_CONFIG;
+            db.collection("configs").doc("site_config").set(configToSeed).catch(e => console.error(e));
           }
         }, function(error) {
           console.error("Configs realtime sync error:", error);
@@ -264,7 +289,7 @@
               return a.id.localeCompare(b.id);
             });
             polls = list;
-            localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
+            localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
             console.log("Firestore Polls updated:", polls.length);
             renderApp();
           } else {
@@ -290,7 +315,7 @@
               return a.id.localeCompare(b.id);
             });
             ads = list;
-            localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(ads));
+            localStorage.setItem(STORAGE_ADS_KEY, safeStringify(ads));
             console.log("Firestore Ads updated:", ads.length);
             renderApp();
           } else {
@@ -523,7 +548,7 @@
         }
         if (!adStats.impressions) adStats.impressions = {};
         adStats.impressions[adId] = (adStats.impressions[adId] || 0) + 1;
-        localStorage.setItem(STORAGE_AD_STATS_KEY, JSON.stringify(adStats));
+        localStorage.setItem(STORAGE_AD_STATS_KEY, safeStringify(adStats));
 
         if (firebaseReady && db) {
           db.collection("ads").doc(adId).update({
@@ -538,7 +563,7 @@
         }
         if (!adStats.clicks) adStats.clicks = {};
         adStats.clicks[adId] = (adStats.clicks[adId] || 0) + 1;
-        localStorage.setItem(STORAGE_AD_STATS_KEY, JSON.stringify(adStats));
+        localStorage.setItem(STORAGE_AD_STATS_KEY, safeStringify(adStats));
         
         // Trigger immediate visual feedback to indicate high-converting natural response
         try {
@@ -668,14 +693,14 @@
                 }
                 return p;
               });
-              localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
+              localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
             } catch (e) {
               polls = INITIAL_POLLS;
-              localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(INITIAL_POLLS));
+              localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(INITIAL_POLLS));
             }
           } else {
             polls = INITIAL_POLLS;
-            localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(INITIAL_POLLS));
+            localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(INITIAL_POLLS));
           }
 
           // Smart Sponsor Ads synchronization: check if embedded INITIAL_ADS differs from local storage copy
@@ -708,7 +733,7 @@
             ads = JSON.parse(storedAds);
           } else {
             ads = INITIAL_ADS;
-            localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(INITIAL_ADS));
+            localStorage.setItem(STORAGE_ADS_KEY, safeStringify(INITIAL_ADS));
           }
 
           // Smart Site Config synchronization: check if branding configurations have updated on GitHub
@@ -717,10 +742,10 @@
           if (storedConfig) {
             try {
               const parsedConfig = JSON.parse(storedConfig);
-              if (parsedConfig.brandName !== DEFAULT_SITE_CONFIG.brandName || 
+               if (parsedConfig.brandName !== DEFAULT_SITE_CONFIG.brandName || 
                   parsedConfig.homeTitle !== DEFAULT_SITE_CONFIG.homeTitle ||
                   parsedConfig.homeSubtitle !== DEFAULT_SITE_CONFIG.homeSubtitle ||
-                  JSON.stringify(parsedConfig.navItems) !== JSON.stringify(DEFAULT_SITE_CONFIG.navItems)) {
+                  safeStringify(parsedConfig.navItems) !== safeStringify(DEFAULT_SITE_CONFIG.navItems)) {
                 configSyncWithEmbedded = true;
               }
             } catch (e) {
@@ -735,7 +760,7 @@
             }
           } else {
             siteConfig = DEFAULT_SITE_CONFIG;
-            localStorage.setItem(STORAGE_SITE_CONFIG_KEY, JSON.stringify(DEFAULT_SITE_CONFIG));
+            localStorage.setItem(STORAGE_SITE_CONFIG_KEY, safeStringify(DEFAULT_SITE_CONFIG));
           }
 
           // Stored votes matching tracker
@@ -825,8 +850,8 @@
         });
 
         userVotes[pollId] = optionId;
-        localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
-        localStorage.setItem(STORAGE_USER_VOTES_KEY, JSON.stringify(userVotes));
+        localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
+        localStorage.setItem(STORAGE_USER_VOTES_KEY, safeStringify(userVotes));
         renderApp();
 
         if (updatedPoll) {
@@ -856,8 +881,8 @@
         });
 
         delete userVotes[pollId];
-        localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
-        localStorage.setItem(STORAGE_USER_VOTES_KEY, JSON.stringify(userVotes));
+        localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
+        localStorage.setItem(STORAGE_USER_VOTES_KEY, safeStringify(userVotes));
         renderApp();
 
         if (updatedPoll) {
@@ -875,6 +900,19 @@
       function renderApp() {
         const appContainer = document.getElementById("app");
         if (!appContainer) return;
+
+        // Save active element focus and selection to prevent blinking focus loss upon re-renders
+        let activeElementId = document.activeElement ? document.activeElement.id : null;
+        let selectionStart = null;
+        let selectionEnd = null;
+        if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
+          try {
+            selectionStart = document.activeElement.selectionStart;
+            selectionEnd = document.activeElement.selectionEnd;
+          } catch (e) {
+            // Safe catch
+          }
+        }
 
         // Determine if we are rendered inside the admin route
         const showingAdminView = currentRoute === "/admin";
@@ -1192,6 +1230,21 @@
 
         // Load custom HTML/JS code snippets dynamically for custom banners
         injectAdContainers();
+
+        // Restore active element focus and cursor position to prevent typing/blink disruption
+        if (activeElementId) {
+          const elementToFocus = document.getElementById(activeElementId);
+          if (elementToFocus) {
+            elementToFocus.focus();
+            if (selectionStart !== null && selectionEnd !== null) {
+              try {
+                elementToFocus.setSelectionRange(selectionStart, selectionEnd);
+              } catch (e) {
+                // Safe catch
+              }
+            }
+          }
+        }
       }
 
       function injectAdContainers() {
@@ -2009,14 +2062,13 @@
                         <div class="w-full h-4 rounded bg-gradient-to-r from-teal-600 via-rose-500 to-amber-500 mb-1.5"></div>
                         <span class="font-sans text-[10px] font-bold text-slate-800">Custom Mode settings</span>
                       </button>
-                    </div>
-
-                    ${pollFormSelectedColorIdx === -1 ? `
+                        ${pollFormSelectedColorIdx === -1 ? `
                       <div class="grid grid-cols-2 gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-fade-in">
                         <div>
                           <label class="block text-[9px] font-bold text-slate-450 uppercase mb-1">Tailwind Background classes</label>
                           <input
                             type="text"
+                            id="poll-input-custom-bg"
                             value="${pollFormCustomBg}"
                             onkeyup="updatePollFormState('customBg', this.value)"
                             placeholder="bg-indigo-950 border-b-4 border-indigo-400"
@@ -2027,6 +2079,7 @@
                           <label class="block text-[9px] font-bold text-slate-450 uppercase mb-1">Tailwind Text classes</label>
                           <input
                             type="text"
+                            id="poll-input-custom-text"
                             value="${pollFormCustomText}"
                             onkeyup="updatePollFormState('customText', this.value)"
                             placeholder="text-indigo-50"
@@ -2040,10 +2093,10 @@
                   <!-- Live Header display preview -->
                   <div class="rounded-2xl overflow-hidden border border-slate-200">
                     <div class="bg-slate-100 px-3 py-1.5 text-[9px] font-mono font-bold text-slate-400 border-b border-slate-200 uppercase tracking-widest">Public Heading rendering outlook</div>
-                    <div class="p-6 ${previewHeaderBg} text-white space-y-1">
-                      <span class="inline-block px-1.5 py-0.2 bg-white/20 rounded text-[9px] font-black uppercase leading-tight mr-2">${pollFormCategory || "CATEGORY"}</span>
-                      <h4 class="font-sans font-bold text-base leading-tight ${previewHeaderText}">${pollFormQuestion || "Enter target question..."}</h4>
-                      <p class="font-sans text-xs opacity-90 leading-relaxed ${previewHeaderText}">${pollFormDescription || "Add brief story descriptive markers..."}</p>
+                    <div id="preview-theme-container" class="p-6 ${previewHeaderBg} text-white space-y-1">
+                      <span id="preview-category" class="inline-block px-1.5 py-0.2 bg-white/20 rounded text-[9px] font-black uppercase leading-tight mr-2">${pollFormCategory || "CATEGORY"}</span>
+                      <h4 id="preview-question" class="font-sans font-bold text-base leading-tight ${previewHeaderText}">${pollFormQuestion || "Enter target question..."}</h4>
+                      <p id="preview-description" class="font-sans text-xs opacity-90 leading-relaxed ${previewHeaderText}">${pollFormDescription || "Add brief story descriptive markers..."}</p>
                     </div>
                   </div>
 
@@ -2693,6 +2746,7 @@
                       <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Brand Logo Text</label>
                       <input
                         type="text"
+                        id="site-form-brand-name"
                         value="${siteFormBrandName}"
                         onkeyup="siteFormBrandName = this.value"
                         placeholder="e.g. LankaCrisis Q&A"
@@ -2704,6 +2758,7 @@
                       <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Brand Secondary Label Tag</label>
                       <input
                         type="text"
+                        id="site-form-brand-sub"
                         value="${siteFormBrandSub}"
                         onkeyup="siteFormBrandSub = this.value"
                         placeholder="e.g. Civic Consensus Engine"
@@ -2717,6 +2772,7 @@
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Survey Main Hero Headliner</label>
                     <input
                       type="text"
+                      id="site-form-home-title"
                       value="${siteFormHomeTitle}"
                       onkeyup="siteFormHomeTitle = this.value"
                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
@@ -2727,6 +2783,7 @@
                   <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Survey Sub-Introduction Prompt</label>
                     <textarea
+                      id="site-form-home-subtitle"
                       onkeyup="siteFormHomeSubtitle = this.value"
                       rows="3"
                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none resize-none font-sans"
@@ -2739,6 +2796,7 @@
                       <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Tailwind Accent Color Bg (Logo/Tabs)</label>
                       <input
                         type="text"
+                        id="site-form-primary-accent"
                         value="${siteFormPrimaryAccent}"
                         onkeyup="siteFormPrimaryAccent = this.value"
                         placeholder="bg-[#064e43]"
@@ -2750,6 +2808,7 @@
                       <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Tailwind Accent Text class</label>
                       <input
                         type="text"
+                        id="site-form-accent-text"
                         value="${siteFormAccentText}"
                         onkeyup="siteFormAccentText = this.value"
                         placeholder="text-[#064e43]"
@@ -2763,6 +2822,7 @@
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Footer Credits Attribution line</label>
                     <input
                       type="text"
+                      id="site-form-footer-text"
                       value="${siteFormFooterText}"
                       onkeyup="siteFormFooterText = this.value"
                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
@@ -3178,9 +3238,9 @@
           ads = parsed.ads;
           siteConfig = parsed.siteConfig;
           
-          localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
-          localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(ads));
-          localStorage.setItem(STORAGE_SITE_CONFIG_KEY, JSON.stringify(siteConfig));
+          localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
+          localStorage.setItem(STORAGE_ADS_KEY, safeStringify(ads));
+          localStorage.setItem(STORAGE_SITE_CONFIG_KEY, safeStringify(siteConfig));
           
           alert("Raw JSON configuration successfully validated and integrated!");
           syncAdminFormFields();
@@ -3241,9 +3301,9 @@
             ads = parsed.ads;
             siteConfig = parsed.siteConfig;
 
-            localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
-            localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(ads));
-            localStorage.setItem(STORAGE_SITE_CONFIG_KEY, JSON.stringify(siteConfig));
+            localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
+            localStorage.setItem(STORAGE_ADS_KEY, safeStringify(ads));
+            localStorage.setItem(STORAGE_SITE_CONFIG_KEY, safeStringify(siteConfig));
 
             if (successBox) {
               successBox.innerText = `Verified successfully! Integrated ${polls.length} Polls, ${ads.length} Ads.`;
@@ -3413,18 +3473,62 @@
           pollFormQuestion = value;
           const label = document.getElementById("poll-input-q");
           if (label) label.value = value;
+          const previewEl = document.getElementById("preview-question");
+          if (previewEl) previewEl.innerText = value || "Enter target question...";
         } else if (field === 'category') {
           pollFormCategory = value;
+          const label = document.getElementById("poll-input-c");
+          if (label) label.value = value;
+          const previewEl = document.getElementById("preview-category");
+          if (previewEl) previewEl.innerText = value || "CATEGORY";
         } else if (field === 'description') {
           pollFormDescription = value;
+          const label = document.getElementById("poll-input-desc");
+          if (label) label.value = value;
+          const previewEl = document.getElementById("preview-description");
+          if (previewEl) previewEl.innerText = value || "Add brief story descriptive markers...";
         } else if (field === 'colorPreset') {
           pollFormSelectedColorIdx = value;
+          renderApp();
         } else if (field === 'customBg') {
           pollFormCustomBg = value;
+          const label = document.getElementById("poll-input-custom-bg");
+          if (label) label.value = value;
+          updatePreviewStylesDirectly();
         } else if (field === 'customText') {
           pollFormCustomText = value;
+          const label = document.getElementById("poll-input-custom-text");
+          if (label) label.value = value;
+          updatePreviewStylesDirectly();
         }
-        renderApp();
+      }
+
+      function updatePreviewStylesDirectly() {
+        const previewBgEl = document.getElementById("preview-theme-container");
+        if (!previewBgEl) return;
+        
+        let previewHeaderBg = "bg-slate-900";
+        let previewHeaderText = "text-slate-100";
+        if (pollFormSelectedColorIdx !== -1 && COLOR_PRESETS[pollFormSelectedColorIdx]) {
+          previewHeaderBg = COLOR_PRESETS[pollFormSelectedColorIdx].bg;
+          previewHeaderText = COLOR_PRESETS[pollFormSelectedColorIdx].text;
+        } else {
+          previewHeaderBg = pollFormCustomBg || "bg-slate-900";
+          previewHeaderText = pollFormCustomText || "text-slate-100";
+        }
+        
+        // Update container background classes
+        previewBgEl.className = "p-6 " + previewHeaderBg + " text-white space-y-1";
+        
+        // Update header and description text color classes
+        const pq = document.getElementById("preview-question");
+        if (pq) {
+          pq.className = "font-sans font-bold text-base leading-tight " + previewHeaderText;
+        }
+        const pd = document.getElementById("preview-description");
+        if (pd) {
+          pd.className = "font-sans text-xs opacity-90 leading-relaxed " + previewHeaderText;
+        }
       }
 
       function updateOptionValue(index, property, value) {
@@ -3541,7 +3645,7 @@
           polls = [savedPoll, ...polls];
         }
 
-        localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
+        localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
         resetPollFormBuffers();
         renderApp();
 
@@ -3602,7 +3706,7 @@
       function deletePollRecord(id) {
         if (confirm("Are you sure you want to permanently delete this poll? All user accumulated sample votes will be dropped.")) {
           polls = polls.filter(p => p.id !== id);
-          localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
+          localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
           if (editingPollId === id) {
             resetPollFormBuffers();
           } else {
@@ -3618,7 +3722,7 @@
             ...p,
             options: p.options.map(o => ({ ...o, votes: 0 }))
           }));
-          localStorage.setItem(STORAGE_POLLS_KEY, JSON.stringify(polls));
+          localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
           userVotes = {};
           localStorage.removeItem(STORAGE_USER_VOTES_KEY);
           resetPollFormBuffers();
@@ -3636,7 +3740,7 @@
       function resetAdStatistics() {
         if (confirm("Reset all sponsor click and impression telemetry metrics back to zero?")) {
           adStats = { impressions: {}, clicks: {} };
-          localStorage.setItem(STORAGE_AD_STATS_KEY, JSON.stringify(adStats));
+          localStorage.setItem(STORAGE_AD_STATS_KEY, safeStringify(adStats));
           renderApp();
         }
       }
@@ -3704,7 +3808,7 @@
           ads = [savedAd, ...ads];
         }
 
-        localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(ads));
+        localStorage.setItem(STORAGE_ADS_KEY, safeStringify(ads));
         resetAdFormBuffers();
         renderApp();
 
@@ -3757,7 +3861,7 @@
       function deleteAdCampaignRecord(id) {
         if (confirm("Are you sure you want to drop this promotional ad campaign? It will disappear from all user frames immediately.")) {
           ads = ads.filter(a => a.id !== id);
-          localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(ads));
+          localStorage.setItem(STORAGE_ADS_KEY, safeStringify(ads));
           if (editingAdId === id) {
             resetAdFormBuffers();
           } else {
@@ -3776,7 +3880,7 @@
           }
           return a;
         });
-        localStorage.setItem(STORAGE_ADS_KEY, JSON.stringify(ads));
+        localStorage.setItem(STORAGE_ADS_KEY, safeStringify(ads));
         renderApp();
 
         if (updatedAd) {
@@ -3839,7 +3943,7 @@
           navItems: siteFormNavItems
         };
 
-        localStorage.setItem(STORAGE_SITE_CONFIG_KEY, JSON.stringify(siteConfig));
+        localStorage.setItem(STORAGE_SITE_CONFIG_KEY, safeStringify(siteConfig));
         
         if (successAlet) {
           successAlet.classList.remove("hidden");
