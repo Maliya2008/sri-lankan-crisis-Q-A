@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "Poll": {
+      "title": "Poll",
+      "description": "A policy survey question on the economic recovery context.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "question": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "headingColor": { "type": "string" },
+        "textColor": { "type": "string" },
+        "accentColor": { "type": "string" },
+        "options": { "type": "array" }
+      },
+      "required": ["id", "question", "options"]
+    },
+    "Ad": {
+      "title": "Ad",
+      "description": "Sponsored promotional or humanitarian informational card.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "linkUrl": { "type": "string" },
+        "badgeText": { "type": "string" },
+        "position": { "type": "string" },
+        "buttonText": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "useHtmlCode": { "type": "boolean" },
+        "htmlCode": { "type": "string" },
+        "integrationStyle": { "type": "string" },
+        "pollOptions": { "type": "string" },
+        "impressions": { "type": "integer" },
+        "clicks": { "type": "integer" }
+      },
+      "required": ["id", "title"]
+    },
+    "SiteConfig": {
+      "title": "SiteConfig",
+      "description": "Website branding, naming, titles, and layout configuration.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "brandName": { "type": "string" },
+        "brandSub": { "type": "string" },
+        "homeTitle": { "type": "string" },
+        "homeSubtitle": { "type": "string" },
+        "footerText": { "type": "string" },
+        "primaryAccentColor": { "type": "string" },
+        "accentTextColor": { "type": "string" },
+        "navItems": { "type": "array" }
+      },
+      "required": ["id", "brandName"]
+    }
+  },
+  "firestore": {
+    "polls/{pollId}": {
+      "schema": "Poll",
+      "description": "Collection of policy surveys."
+    },
+    "ads/{adId}": {
+      "schema": "Ad",
+      "description": "Collection of promotional campaign cards."
+    },
+    "configs/{configId}": {
+      "schema": "SiteConfig",
+      "description": "Global layout and branding configs, usually single document index."
+    }
+  }
+}

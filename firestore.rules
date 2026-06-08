@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Polls: Publicly readable so everyone sees questions & current votes
+    // Anyone can update options array to cast a vote
+    match /polls/{pollId} {
+      allow read: if true;
+      allow create, delete: if true;
+      allow update: if true;
+    }
+
+    // Ads: Publicly readable, anyone can track views/clicks impressions
+    match /ads/{adId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Configs: Site configurations are public configuration data
+    match /configs/{configId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+  }
+}
