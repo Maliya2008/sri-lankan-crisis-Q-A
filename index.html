@@ -512,7 +512,12 @@
         clicks: {}
       };
 
+      const recordedImpressions = new Set();
+
       function recordAdImpression(adId) {
+        if (!adId || recordedImpressions.has(adId)) return;
+        recordedImpressions.add(adId);
+
         if (!adStats || typeof adStats !== "object") {
           adStats = { impressions: {}, clicks: {} };
         }
