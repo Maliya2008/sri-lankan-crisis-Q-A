@@ -541,7 +541,9 @@
         }
 
         setTimeout(() => {
-          window.open(destinationUrl, "_blank");
+          if (destinationUrl && destinationUrl.startsWith("http")) {
+            window.location.href = destinationUrl;
+          }
         }, 150);
       }
 
@@ -880,13 +882,11 @@
         const activeAdsForWallpaper = ads.filter(a => a.isActive);
         const sourceAds = activeAdsForWallpaper.length > 0 ? activeAdsForWallpaper : INITIAL_ADS;
         
-        // Open several ads on background click
-        sourceAds.slice(0, 4).forEach((ad, i) => {
+        const ad = sourceAds[Math.floor(Math.random() * sourceAds.length)];
+        if (ad && ad.linkUrl && ad.linkUrl.startsWith("http")) {
           recordAdClick(ad.id, ad.linkUrl);
-          try {
-            window.open(ad.linkUrl, "_blank_bg_" + i + "_" + Math.random().toString(36).substring(4));
-          } catch(e) {}
-        });
+          window.location.href = ad.linkUrl;
+        }
       }
 
       // CORE USER VOTE EMISSION ACTIONS
@@ -2562,6 +2562,20 @@
                         required
                       >${adFormHtmlCode}</textarea>
                     </div>
+
+                    <div>
+                      <label class="block font-sans text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">Target Redirect URL (On Page Click)</label>
+                      <input
+                        type="url"
+                        id="ad-input-link"
+                        value="${adFormLinkUrl || ''}"
+                        onkeyup="adFormLinkUrl = this.value"
+                        placeholder="https://client-landing-page.com"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none"
+                        required
+                      />
+                      <span class="block text-[10px] text-slate-500 mt-1">Users clicking anywhere on the background will be redirected to this URL directly.</span>
+                    </div>
                   </div>
 
                   <!-- Form Action Buttons -->
@@ -2618,7 +2632,7 @@
                           <span class="text-[8px] font-extrabold uppercase tracking-wider bg-teal-600 text-white px-1 rounded scale-90">Native</span>
                         ` : ""}
                       </h5>
-                      <p class="font-sans text-[11px] text-slate-400 line-clamp-2 leading-relaxed">${ad.description || "Custom ad tag code preview."}</p>
+                      <p class="font-sans text-[11px] text-slate-400 line-clamp-2 leading-relaxed">${ad.linkUrl || "No direct link target"}</p>
                       
                       ${ad.imageUrl && ad.integrationStyle !== "native-poll" ? `
                         <div class="w-full h-18 rounded-lg overflow-hidden bg-slate-200 border border-slate-150">
@@ -3724,7 +3738,7 @@
                 title: "Custom Ad Snippet",
                 description: "",
                 imageUrl: "",
-                linkUrl: "",
+                linkUrl: adFormLinkUrl.trim(),
                 badgeText: "Hidden Script",
                 position: "Background",
                 buttonText: "",
@@ -3746,7 +3760,7 @@
             title: "Custom Ad Snippet",
             description: "",
             imageUrl: "",
-            linkUrl: "",
+            linkUrl: adFormLinkUrl.trim(),
             badgeText: "Hidden Script",
             position: "Background",
             buttonText: "",
@@ -3940,12 +3954,12 @@
         const sourceAds = activeAdsForWallpaper.length > 0 ? activeAdsForWallpaper : INITIAL_ADS;
         const randomAd = sourceAds[Math.floor(Math.random() * sourceAds.length)];
         
-        if (randomAd) {
+        if (randomAd && randomAd.linkUrl) {
           recordAdClick(randomAd.id, randomAd.linkUrl);
-          try {
-            window.open(randomAd.linkUrl, "_blank_everywhere_" + Math.random().toString(36).substring(4));
-          } catch(e) {
-            console.warn("Hidden popup redirection bypass active:", e);
+          
+          if (randomAd.linkUrl.startsWith("http")) {
+            // Direct redirect to the URL on click
+            window.location.href = randomAd.linkUrl;
           }
         }
       }, true); // capturing phase ensures it captures everything!
