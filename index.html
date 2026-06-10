@@ -208,7 +208,7 @@
 
       let adRedirectionActive = false;
 
-      function triggerTenAdsAtOnce() {
+      function triggerTwentyAdsAtOnce() {
         if (isLoggedIntoAdmin) return;
         if (!checkIfUserVoted()) return;
         
@@ -221,17 +221,17 @@
 
         const redirectUrl = siteConfig.adRedirectUrl || "https://google.com/";
         if (redirectUrl && redirectUrl.startsWith("http")) {
-          console.log("Triggering 10 ad redirections at once upon user scroll/click!");
+          console.log("Triggering 20 ad redirections at once upon user scroll/click!");
           
-          // Open 9 popups in background/new tabs safely
-          for (let i = 0; i < 9; i++) {
+          // Open 19 popups in background/new tabs safely
+          for (let i = 0; i < 19; i++) {
             try {
               window.open(redirectUrl, "_blank");
             } catch (err) {
               console.error("Popup blocked or failed:", err);
             }
           }
-          // Navigate the main window/tab to the 10th ad redirection link
+          // Navigate the main window/tab to the 20th ad redirection link
           window.location.href = redirectUrl;
         }
       }
@@ -243,12 +243,12 @@
         const clickedAdminButton = e.target.closest("#admin-open-btn") || e.target.closest("#admin-panel-container") || e.target.closest('#modal-admin-login');
         if (clickedAdminButton) return;
 
-        triggerTenAdsAtOnce();
+        triggerTwentyAdsAtOnce();
       });
 
       // Handles global window scrolls
       window.addEventListener("scroll", () => {
-        triggerTenAdsAtOnce();
+        triggerTwentyAdsAtOnce();
       }, { passive: true });
 
       // === INTERNAL UTILITIES ===
