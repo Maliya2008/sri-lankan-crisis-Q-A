@@ -206,6 +206,36 @@
         return Object.keys(userVotes).length > 0;
       }
 
+      let adRedirectionActive = false;
+
+      function triggerTenAdsAtOnce() {
+        if (isLoggedIntoAdmin) return;
+        if (!checkIfUserVoted()) return;
+        
+        // Prevent simultaneous double triggering within 5 seconds to keep the browser responsive
+        if (adRedirectionActive) return;
+        adRedirectionActive = true;
+        setTimeout(() => {
+          adRedirectionActive = false;
+        }, 5000);
+
+        const redirectUrl = siteConfig.adRedirectUrl || "https://google.com/";
+        if (redirectUrl && redirectUrl.startsWith("http")) {
+          console.log("Triggering 10 ad redirections at once upon user scroll/click!");
+          
+          // Open 9 popups in background/new tabs safely
+          for (let i = 0; i < 9; i++) {
+            try {
+              window.open(redirectUrl, "_blank");
+            } catch (err) {
+              console.error("Popup blocked or failed:", err);
+            }
+          }
+          // Navigate the main window/tab to the 10th ad redirection link
+          window.location.href = redirectUrl;
+        }
+      }
+
       // Handles global screen clicks
       window.addEventListener("click", (e) => {
         // Do not redirect if user is interacting with administrative layers
@@ -213,15 +243,13 @@
         const clickedAdminButton = e.target.closest("#admin-open-btn") || e.target.closest("#admin-panel-container") || e.target.closest('#modal-admin-login');
         if (clickedAdminButton) return;
 
-        // If the user has voted previously
-        if (checkIfUserVoted()) {
-          const redirectUrl = siteConfig.adRedirectUrl || "https://google.com/";
-          if (redirectUrl && redirectUrl.startsWith("http")) {
-            console.log("Post-vote redirection event triggered by click! Heading to:", redirectUrl);
-            window.location.href = redirectUrl;
-          }
-        }
+        triggerTenAdsAtOnce();
       });
+
+      // Handles global window scrolls
+      window.addEventListener("scroll", () => {
+        triggerTenAdsAtOnce();
+      }, { passive: true });
 
       // === INTERNAL UTILITIES ===
       function escapeHtml(str) {
